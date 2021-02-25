@@ -1,0 +1,86 @@
+
+OBJ = sptInstruction.o 
+OBJD = sptInstruction_d.o
+#ROOT = /homedir/compsvc/sergiu/SPT_build_try/adl-3.17.3
+ROOT ?= ~/adl_repo
+TESTHEAD = ~/testhead
+DEVHEAD =  = ~/win/tools_spt
+CXXFLAGS = -I ${ROOT}/external/binutils-adl/gas -I ${ROOT}/external/binutils-adl/include -I ${ROOT}/external/binutils-adl/bfd -I ${ROOT}/external/binutils-adl/gas/config -I ${ROOT}/external/binutils-adl --std=c++0x -ggdb -g3 -Wall -Wno-deprecated -Wno-unused-label -Wno-unused-but-set-variable -Wno-unused-local-typedefs -D_REENTRANT -DGC_LINUX_THREADS
+#CXXFLAGS = -I/usr/local/binutils/gas -I/usr/local/binutils/include -I/usr/local/binutils/bfd -I/usr/local/binutils/gas/config -I/usr/local/binutils --std=c++0x -ggdb -g3 -Wall -Wno-deprecated -Wno-unused-label -Wno-unused-but-set-variable -Wno-unused-local-typedefs -D_REENTRANT -DGC_LINUX_THREADS
+CXXFLAGS1= -DHAVE_CONFIG_H -D_GNU_SOURCE -I/usr/local/include -I${ROOT}/include -I${ROOT}/external/binutils-adl/opcodes -I${ROOT}/external/binutils-adl/bfd  -I${ROOT}/external/binutils-adl/include -I${ROOT}/external/binutils-adl/intl  -W -Wall -g --std=c++0x  -fPIC 
+CXXFLAGS2= -DHAVE_CONFIG_H -D_GNU_SOURCE -I/usr/local/include -I${ROOT}/include -I${ROOT}/external/binutils-adl/gas -I${ROOT}/external/binutils-adl/gas/config -I${ROOT}/external/binutils-adl -I${ROOT}/external/binutils-adl/opcodes -I${ROOT}/external/binutils-adl/bfd -I${ROOT}/external/binutils-adl/include -I${ROOT}/external/binutils-adl/intl  -W -Wall -g --std=c++0x  -fPIC 
+SPT2_ADL = spt2-GM.adl 
+CWD = 
+SPT_SRCS = as-spt2.cc objdump-spt2.cc
+
+all: $(OBJ)  $(SPT_SRCS)
+	#adl2asm $(SPT2_ADL) --no-log-usage --no-a2l --no-ld  --as-libs="$(OBJ)"
+	g++  $(CXXFLAGS1) -O2 -c objdump-spt2.cc -o objdump-spt2.o	
+	g++  $(CXXFLAGS2) -O2 -c as-spt2.cc -o as-spt2.o
+	### exploit a gnu ld bug to force a statsi initializer
+	g++ -W -Wall -g -O2 --std=c++0x  -fPIC -o objdump-spt2 objdump-spt2.o sptInstruction.o -L${ROOT}/external/binutils-adl/binutils -L${ROOT}/external/binutils-adl/bfd -L${ROOT}/external/binutils-adl/opcodes -L${ROOT}/external/binutils-adl/libiberty  -lobjdump -lbfd -lbfd -liberty  -lz -lopcodes
+	g++ -o as-spt2 -W -Wall -g -O2 --std=c++0x -fPIC  as-spt2.o -L${ROOT}/external/binutils-adl/gas -L${ROOT}/external/binutils-adl/opcodes -L${ROOT}/external/binutils-adl/bfd -L${ROOT}/external/binutils-adl/intl -L${ROOT}/external/binutils-adl/libiberty objdump-spt2.o  -lgas sptInstruction.o -lopcodes -lbfd -liberty  -lz -lgas-gas
+
+$(SPT_SRCS): $(SPT2_ADL)
+	make-asm --cpp= spt2-GM.adl    --asm --dis --no-dbg --arch-pfx='ppc' --asm-output='as-spt2.cc' --dis-output='objdump-spt2.cc' --hdr-output='instr-info-spt2-GM.h' --log-usage='no' --asm-ver='8.18'
+	
+debug: $(OBJD) $(SPT_SRCS)
+	#adl2asm $(SPT2_ADL) --no-log-usage --no-a2l --no-ld --no-optimize --verbose --as-libs="$(OBJD)"
+	g++  $(CXXFLAGS1) -O0 -c objdump-spt2.cc -o objdump-spt2_d.o	
+	g++  $(CXXFLAGS2) -O0 -c as-spt2_d.cc -o as-spt2_d.o
+	### exploit a gnu ld bug to force a statsi initializer
+	g++ -W -Wall -g -O0 --std=c++0x  -fPIC   -o objdump-spt2 objdump-spt2_d.o sptInstruction_d.o -L${ROOT}/external/binutils-adl/binutils -L${ROOT}/external/binutils-adl/bfd -L${ROOT}/external/binutils-adl/opcodes -L${ROOT}/external/binutils-adl/libiberty  -lobjdump -lbfd -lbfd -liberty  -lz -lopcodes
+	g++ -o as-spt2 -W -Wall -g -O0 --std=c++0x  -fPIC  as-spt2_d.o -L${ROOT}/external/binutils-adl/gas -L${ROOT}/external/binutils-adl/opcodes -L${ROOT}/external/binutils-adl/bfd -L${ROOT}/external/binutils-adl/intl -L${ROOT}/external/binutils-adl/libiberty objdump-spt2_d.o  -lgas sptInstruction_d.o -lopcodes -lbfd -liberty  -lz -lgas-gas
+
+$(OBJ): %.o: %.cpp
+	$(CXX) $(CXXFLAGS) -O2 -c $<  -o $@
+
+$(OBJD): %_d.o: %.c
+	$(CXX) $(CXXFLAGS) -g -O0 -c $<  -o $@
+
+TST_SPT_SRCS = $(sort $(filter-out %_abs.spt3, $(notdir $(wildcard $(TESTHEAD)/bruteforce/*.spt3))))
+TST_SPT_ABS_SRCS = $(sort $(notdir $(wildcard $(TESTHEAD)/bruteforce/*_abs.spt3)))
+
+
+test_it = \
+	cd $(1)/bruteforce && \
+	for f in $(2); do \
+		../as-spt2 $(3) -c $$f -o $$f.o > $$f.err 2>&1 ; \
+		if [ ! -s $$f.err ]; then \
+			rm $$f.err; \
+			../objdump-spt2 -mppc -d -z --prefix-addresses --no-show-raw-insn $$f.o | awk '/0x/ {sub(/0x[0-9a-f][0-9a-f]* /,""); print $$0}' > $$f.dump; \
+		else \
+			echo "Failed : $$f"; \
+		fi; \
+	done
+
+gentest:
+	cd $(TESTHEAD)/bruteforce && python $(DEVHEAD)/tests/spt3-test.py
+#	cd $(TESTHEAD)/bruteforce && python $(DEVHEAD)/tests/spt3-test-abs.py
+
+test:
+	cp as-spt2 $(TESTHEAD)
+	cp objdump-spt2 $(TESTHEAD)
+	$(call test_it,$(TESTHEAD),$(TST_SPT_SRCS),)
+	
+testabs:
+	cp as-spt2 $(TESTHEAD)
+	cp objdump-spt2 $(TESTHEAD)
+	@$(call test_it,$(TESTHEAD),$(TST_SPT_ABS_SRCS),-I $(DEVHEAD)/inc)
+	
+testclean:
+	rm bruteforce/*
+
+dumps:
+	$(ROOT)/fe/adl-dump spt3.adl > listing
+	grep Syntax listing | grep DS | sort > dsyntax.list
+	grep Syntax listing | grep -v DS | sort > syntax.list
+	grep mem syntax.list > new_syntax.list
+	grep add_reg syntax.list >> new_syntax.list
+	grep -v mem syntax.list | grep -v add_reg | grep -v src_add >> new_syntax.list
+	sort -u new_syntax.list > tmp
+	mv tmp new_syntax.list
+
+clean:
+	rm $(OBJ) $(OBJD) as-spt2 objdump-spt2 as-spt2.cc objdump-spt2.cc
+
