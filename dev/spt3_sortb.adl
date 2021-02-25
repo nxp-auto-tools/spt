@@ -1,0 +1,825 @@
+//
+// Generated using gen_instb.sh
+//
+
+define (arch=spt3_sortb) {
+
+	/*
+	sortb in_dattyp pre_proc set_size in_pack           vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+	sortb in_dattyp pre_proc set_size in_pack           vec_sz src_add,           src_add_inc, dest_add_inc
+	sortb in_dattyp pre_proc set_size in_pack sort_rank vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+	sortb in_dattyp pre_proc set_size in_pack sort_rank vec_sz src_add,           src_add_inc, dest_add_inc
+	*/
+
+	  define (instr=sortb) {
+	    width = 128;
+	    fields = (opcode(0x3D),in_dattyp2,pre_proc,set_size,ima_fld(0),
+						in_pack, vec_sz, sort_type(0),
+						src_add, dest_add,
+						src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sortb %p %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					in_dattyp2, pre_proc, set_size,
+					in_pack,vec_sz,
+					mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+					mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+					src_add_inc, dest_add_inc);
+	    syntax = ("sortb %p %p %p %p,%f,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc);
+		action = { };
+	  }
+
+	  // SORTB instruction 
+	  define (instr=sortb_MM) {
+	    width = 128;
+	     alias = sortb(in_dattyp2(in_dattyp2),pre_proc(pre_proc),
+				set_size(set_size),in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+				src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+				dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	    syntax = ("sortb %p %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+				in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+				mem,bank,column,slice,
+				mem1,bank1,column1,slice1,
+				src_add_inc, dest_add_inc);
+	  }
+	 
+	  define (instr=sortb_ind) {
+	    width = 128;
+	    fields = (opcode(0x3D),in_dattyp2,pre_proc,set_size,ima_fld(1),
+					in_pack, vec_sz, sort_type(0),
+					src_add,
+					src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sortb.ind %p %p %p %p,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+					src_add_reg(src_add),
+					src_add_inc, dest_add_inc);
+	    syntax = ("sortb.ind %p %p %p %p,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+					src_add, src_add_inc, dest_add_inc);
+		action = { };
+	  }
+
+	  // SORTB instruction 
+	  define (instr=sortb_ind_R) {
+	    width = 128;
+	    alias = sortb_ind(in_dattyp2(in_dattyp2),pre_proc(pre_proc),
+				set_size(set_size),in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+				src_add(src_add_reg),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	    syntax = ("sortb.ind %p %p %p %p,%f,%f,%f,%f",
+				in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+				src_add_reg,
+				src_add_inc, dest_add_inc);
+	  }
+	 
+	  define (instr=sortb_slide) {
+	    width = 128;
+	    fields = (opcode(0x3D),in_dattyp2,pre_proc,set_size,ima_fld(0),
+						in_pack, vec_sz, sort_type(1),
+						src_add, dest_add,sort_rank,
+						src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sortb %p %p %p %p %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					in_dattyp2, pre_proc, set_size,
+					in_pack,sort_rank,vec_sz,
+					mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+					mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+					src_add_inc, dest_add_inc);
+	    syntax = ("sortb %p %p %p %p %f, %f,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc);
+		action = { };
+	  }
+
+	  // SORTB instruction 
+	  define (instr=sortb_slide_MM) {
+	    width = 128;
+	     alias = sortb_slide(in_dattyp2(in_dattyp2),pre_proc(pre_proc),
+				set_size(set_size),sort_rank(sort_rank),in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+				src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+				dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	    syntax = ("sortb %p %p %p %p %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+				in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+				mem,bank,column,slice,
+				mem1,bank1,column1,slice1,
+				src_add_inc, dest_add_inc);
+	  }
+	 
+	  define (instr=sortb_slide_ind) {
+	    width = 128;
+	    fields = (opcode(0x3D),in_dattyp2,pre_proc,set_size,ima_fld(1),
+					in_pack, vec_sz, sort_type(1),sort_rank,
+					src_add,
+					src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sortb.ind %p %p %p %p %f, %f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+					src_add_reg(src_add),
+					src_add_inc, dest_add_inc);
+	    syntax = ("sortb.ind %p %p %p %p %f, %f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+					src_add, src_add_inc, dest_add_inc);
+		action = { };
+	  }
+
+	  // SORTB instruction 
+	  define (instr=sortb_slide_ind_R) {
+	    width = 128;
+	    alias = sortb_slide_ind(in_dattyp2(in_dattyp2),pre_proc(pre_proc),
+				set_size(set_size),sort_rank(sort_rank),in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+				src_add(src_add_reg),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	    syntax = ("sortb.ind %p %p %p %p %f, %f,%f,%f,%f",
+				in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+				src_add_reg,
+				src_add_inc, dest_add_inc);
+	  }
+
+// MAXSB instruction 
+// maxsb maxsn_sel in_dattyp pre_proc in_pack vec_sz src_add, dest_add, src_add_inc, dest_add_inc, gm_add
+	  define (instr=maxsbGM) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(0), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(1), out_mode(0), gm_add, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxsb.gm %p %p %p %p, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+					mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+					src_add_inc, dest_add_inc,
+					mem2(decode_mem(gm_add)),bank2(decode_bank(gm_add)),column2(decode_column(gm_add)),slice2(decode_slice(gm_add)));
+	     syntax = ("maxsb.gm %p %p %p %p, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc,
+					gm_add);
+		action = { };
+		}
+
+	  define (instr=maxsbGM_MM_m) {
+	    width = 128;
+	     alias = maxsbGM(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					gm_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.gm %p %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,
+					mem2,bank2,column2,slice2);
+	  }
+
+	  define (instr=maxsbGM_MM_r) {
+	    width = 128;
+	     alias = maxsbGM(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					gm_add(gm_add_reg));
+
+	     syntax = ("maxsb.gm %p %p %p %p, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,
+					gm_add_reg);
+	  }
+
+// maxsb.gm maxsn_sel in_dattyp pre_proc in_pack out_mode gm_preload vec_sz src_add, dest_add, src_add_inc, dest_add_inc, gm_add
+
+	  define (instr=maxsbGM_ind) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(1), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(1), out_mode(0), gm_add, vec_sz, src_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxsb.gm.ind %p %p %p %p,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,
+					gm_add);
+	     syntax = ("maxsb.gm.ind %p %p %p %p,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,
+					gm_add);
+		action = { };
+		}
+
+	  define (instr=maxsbGM_ind_R_m) {
+	    width = 128;
+	     alias = maxsbGM_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					gm_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.gm.ind %p %p %p %p,%f,%f,%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,
+					mem2,bank2,column2,slice2);
+	  }
+
+	  define (instr=maxsbGM_ind_R_r) {
+	    width = 128;
+	     alias = maxsbGM_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					gm_add(gm_add_reg));
+
+	     syntax = ("maxsb.gm.ind %p %p %p %p,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,
+					gm_add_reg);
+	  }
+
+	  define (instr=maxsbGM_no_prel) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(0), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(0), out_mode(0), gm_add(0), vec_sz, src_add, dest_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxsb.gm %p %p %p %p, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+					mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+					src_add_inc, dest_add_inc);
+	     syntax = ("maxsb.gm %p %p %p %p, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc);
+		action = { };
+		}
+
+	  define (instr=maxsbGM_no_prel_MM_m) {
+	    width = 128;
+	     alias = maxsbGM_no_prel(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.gm %p %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc);
+	  }
+
+	  define (instr=maxsbGM_no_prel_MM_r) {
+	    width = 128;
+	     alias = maxsbGM_no_prel(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.gm %p %p %p %p, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc);
+	  }
+
+// maxsb.gm maxsn_sel in_dattyp pre_proc in_pack out_mode vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+
+	  define (instr=maxsbGM_no_prel_ind) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(1), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(0), out_mode(0), gm_add(0), vec_sz, src_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxsb.gm.ind %p %p %p %p,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc);
+	     syntax = ("maxsb.gm.ind %p %p %p %p, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc);
+		action = { };
+		}
+
+	  define (instr=maxsbGM_no_prel_ind_R_m) {
+	    width = 128;
+	     alias = maxsbGM_no_prel_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.gm.ind %p %p %p %p, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc);
+	  }
+
+	  define (instr=maxsbGM_no_prel_ind_R_r) {
+	    width = 128;
+	     alias = maxsbGM_no_prel_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc), maxsn_sel(maxsn_sel),
+					in_pack(in_pack),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.gm.ind %p %p %p %p, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc);
+	  }
+
+		// maxsb maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+		// maxsb maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn vec_sz src_add, src_add_inc, dest_add_inc
+		// maxsb maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+		// maxsb maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn vec_sz src_add, src_add_inc, dest_add_inc
+
+	  define (instr=maxsbLM) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(0), max_mode(1), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, bitfld_size,
+					vec_sz, src_add, dest_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxsb.lm %p %p %p %p %p %p %p %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), in_tag, cyc_extn, vec_sz,
+					mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+					mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+					src_add_inc, dest_add_inc);
+	   
+	     syntax = ("maxsb.lm %p %p %p %p %p %p %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc, bitfld_size(out_mode ? 0 : 0));
+		action = { };
+		}
+
+	  define (instr=maxsbLM_MM) {
+	    width = 128;
+	     alias = maxsbLM(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn),
+					in_pack(in_pack), bitfld_size(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.lm %p %p %p %p %p %p %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc);
+	  }
+
+	  define (instr=maxsbLM_ind) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(1), max_mode(1), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, bitfld_size,
+					vec_sz, src_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxsb.lm.ind %p %p %p %p %p %p %f %f, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), in_tag, cyc_extn, vec_sz,
+					src_add_reg(src_add),
+					src_add_inc, dest_add_inc);
+	   
+	     syntax = ("maxsb.lm.ind %p %p %p %p %p %p %f, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc, bitfld_size(out_mode ? 0 : 0));
+		action = { };
+		}
+
+	  define (instr=maxsbLM_ind_R) {
+	    width = 128;
+	     alias = maxsbLM_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn),
+					in_pack(in_pack), bitfld_size(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.lm.ind %p %p %p %p %p %p %f, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc);
+	  }
+
+	  define (instr=maxsbLM_bfld) {
+		width = 128;
+		alias = maxsbLM(in_dattyp2(in_dattyp2),
+				pre_proc(pre_proc),maxsn_sel(maxsn_sel),
+				in_tag(in_tag), cyc_extn(cyc_extn),
+				in_pack(in_pack),
+				out_mode(0), bitfld_size(bitfld_size),
+				vec_sz(chk_size(vec_sz)),
+				src_add(src_add), dest_add(dest_add),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	    syntax = ("maxsb.lm %p %p %p %p %p %p %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc);
+		}
+
+	  define (instr=maxsbLM_bfld_MM) {
+	    width = 128;
+	     alias = maxsbLM(in_dattyp2(in_dattyp2), 
+					pre_proc(pre_proc),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.lm %p %p %p %p %f %f %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc);
+	  }
+
+	  define (instr=maxsbLM_bfld_ind) {
+		width = 128;
+		 alias = maxsbLM_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn),out_mode(0),
+					in_pack(in_pack),bitfld_size(bitfld_size),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+		 syntax = ("maxsb.lm.ind %p %p %p %p %f %f %f, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc);
+	  }
+
+	  define (instr=maxsbLM_bfld_ind_R) {
+	    width = 128;
+	     alias = maxsbLM_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn),out_mode(0),
+					in_pack(in_pack),bitfld_size(bitfld_size),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	     syntax = ("maxsb.lm.ind %p %p %p %p %f %f %f, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc);
+	  }
+
+	  // maxsb maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn thld_mode  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+	  // maxsb maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn thld_mode  vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+	  // maxsb maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn thld_mode  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+	  // maxsb maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn thld_mode  vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+
+	  define (instr=maxsbLMTH) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(0), max_mode(2), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, thld_mode, bitfld_size,
+					vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, thld_add);
+
+	     dsyntax = ("maxsb.lmth %p %p %p %p %p %p %f %f %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), in_tag, cyc_extn, thld_mode, vec_sz,
+					mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+					mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+					src_add_inc, dest_add_inc,
+					mem2(decode_mem(thld_add)),bank2(decode_bank(thld_add)),column2(decode_column(thld_add)),slice2(decode_slice(thld_add)));
+	   
+	     syntax = ("maxsb.lmth %p %p %p %p %p %p %f %f, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc, thld_add, bitfld_size(out_mode ? 0 : 0));
+		action = { };
+		}
+
+	  define (instr=maxsbLMTH_MM_r) {
+	    width = 128;
+	     alias = maxsbLMTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack), bitfld_size(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add_reg));
+
+	     syntax = ("maxsb.lmth %p %p %p %p %p %p %f %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,thld_add_reg);
+	  }
+
+	  define (instr=maxsbLMTH_MM_m) {
+	    width = 128;
+	     alias = maxsbLMTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack), bitfld_size(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.lmth %p %p %p %p %p %p %f %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,mem2,bank2,column2,slice2);
+	  }
+
+	  define (instr=maxsbLMTH_ind) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(1), max_mode(2), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, thld_mode, bitfld_size,
+					vec_sz, src_add, src_add_inc, dest_add_inc,thld_add);
+
+	     dsyntax = ("maxsb.lmth.ind %p %p %p %p %p %p %f %f %f, %f,%f,%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), 
+					in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add_reg(src_add),
+					src_add_inc, dest_add_inc,
+					mem2(decode_mem(thld_add)),bank2(decode_bank(thld_add)),column2(decode_column(thld_add)),slice2(decode_slice(thld_add)));
+
+	     syntax = ("maxsb.lmth.ind %p %p %p %p %p %p %f %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,thld_add, bitfld_size(out_mode ? 0 : 0));
+		action = { };
+		}
+
+	  define (instr=maxsbLMTH_ind_R_r) {
+	    width = 128;
+	     alias = maxsbLMTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel), thld_mode(thld_mode),
+					in_tag(in_tag), cyc_extn(cyc_extn),
+					in_pack(in_pack), bitfld_size(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add_reg));
+
+	     syntax = ("maxsb.lmth.ind %p %p %p %p %p %p %f %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,thld_add_reg);
+	  }
+
+	  define (instr=maxsbLMTH_ind_R_m) {
+	    width = 128;
+	     alias = maxsbLMTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel), thld_mode(thld_mode),
+					in_tag(in_tag), cyc_extn(cyc_extn),
+					in_pack(in_pack), bitfld_size(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					thld_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.lmth.ind %p %p %p %p %p %p %f %f, %f,%f,%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,
+					mem2,bank2,column2,slice2);
+	  }
+
+	  define (instr=maxsbLMTH_bfld) {
+		width = 128;
+	     alias = maxsbLMTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add),
+					dest_add(dest_add),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add));
+
+	     syntax = ("maxsb.lmth %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc,thld_add);
+		}
+
+	  define (instr=maxsbLMTH_bfld_MM_r) {
+	    width = 128;
+	     alias = maxsbLMTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add_reg));
+
+	     syntax = ("maxsb.lmth %p %p %p %p %f %f %f %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,thld_add_reg);
+	  }
+
+	  define (instr=maxsbLMTH_bfld_MM_m) {
+	    width = 128;
+	     alias = maxsbLMTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					thld_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.lmth %p %p %p %p %f %f %f %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,
+					mem2,bank2,column2,slice2);
+	  }
+
+	  define (instr=maxsbLMTH_bfld_ind) {
+		width = 128;
+	     alias = maxsbLMTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add));
+
+	     syntax = ("maxsb.lmth.ind %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,thld_add);
+		}
+
+	  define (instr=maxsbLMTH_bfld_ind_R_r) {
+	    width = 128;
+	     alias = maxsbLMTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add_reg));
+
+	     syntax = ("maxsb.lmth.ind %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,thld_add_reg);
+	  }
+
+	  define (instr=maxsbLMTH_bfld_ind_R_m) {
+	    width = 128;
+	     alias = maxsbLMTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					thld_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.lmth.ind %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,mem2,bank2,column2,slice2);
+	  }
+
+	  // maxsb maxsn_sel in_dattyp pre_proc in_pack out_mode thld_mode vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+	  // maxsb maxsn_sel in_dattyp pre_proc in_pack out_mode thld_mode vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+
+	  define (instr=maxsbTH) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(0), max_mode(3), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, thld_mode,
+					vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, thld_add);
+
+	     dsyntax = ("maxsb.th %p %p %p %p %p %p, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+					mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+					src_add_inc, dest_add_inc, 
+					mem2(decode_mem(thld_add)),bank2(decode_bank(thld_add)),column2(decode_column(thld_add)),slice2(decode_slice(thld_add)));
+	   
+	     syntax = ("maxsb.th %p %p %p %p %p %p, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc, thld_add);
+		action = { };
+		}
+
+	  define (instr=maxsbTH_MM_r) {
+	    width = 128;
+	     alias = maxsbTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel),thld_mode(thld_mode),
+					in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add_reg));
+
+	     syntax = ("maxsb.th %p %p %p %p %p %p, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,thld_add_reg);
+	  }
+
+	  define (instr=maxsbTH_MM_m) {
+	    width = 128;
+	     alias = maxsbTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel),thld_mode(thld_mode),
+					in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+					src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+					dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					thld_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.th %p %p %p %p %p %p, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					mem,bank,column,slice,
+					mem1,bank1,column1,slice1,
+					src_add_inc, dest_add_inc,mem2,bank2,column2,slice2);
+	  }
+
+	  define (instr=maxsbTH_ind) {
+		width = 128;
+		fields = (opcode(0x37), ima_fld(1), max_mode(3), maxsn_sel, in_dattyp2, pre_proc, thld_mode,
+	    			in_pack, out_mode, vec_sz, src_add, src_add_inc, dest_add_inc,thld_add);
+
+	     dsyntax = ("maxsb.th.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					src_add_reg(src_add),
+					src_add_inc, dest_add_inc,
+					mem2(decode_mem(thld_add)),bank2(decode_bank(thld_add)),column2(decode_column(thld_add)),slice2(decode_slice(thld_add)));
+	   
+	     syntax = ("maxsb.th.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,thld_add);
+		action = { };
+		}
+
+	  define (instr=maxsbTH_ind_R_r) {
+	    width = 128;
+	     alias = maxsbTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel), thld_mode(thld_mode),
+					in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add_reg));
+
+	     syntax = ("maxsb.th.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,thld_add_reg);
+	  }
+
+	  define (instr=maxsbTH_ind_R_m) {
+	    width = 128;
+	     alias = maxsbTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(out_mode),maxsn_sel(maxsn_sel), thld_mode(thld_mode),
+					in_pack(in_pack),vec_sz(chk_size(vec_sz)),
+					src_add(src_add_reg),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+					thld_add(translateM(mem2,bank2,column2,slice2)));
+
+	     syntax = ("maxsb.th.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f(%f,%f,%f)",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					src_add_reg,
+					src_add_inc, dest_add_inc,
+					mem2,bank2,column2,slice2);
+	  }
+
+}

@@ -1,0 +1,1029 @@
+define (arch=spt3_copy) {
+
+    define (instrfield=cp_type) {
+        // COPY
+        bits = (116,112);
+    }
+
+    define (instrfield=rst_acc) {
+        // COPY
+        bits = 117;
+        enumerated = (".no_rst",".rst_wr");
+    }
+
+    define (instrfield=rst_n_keep) {
+        // COPY
+        bits = 111;
+        enumerated = (".keep_orig",".reset_values");
+        value = ".keep_orig";
+    }
+
+    define (instrfield=blk_src_inc) {
+        // COPY
+        bits = (63,56);
+        display = dec;
+        allow_conflict = true;
+    }
+
+    define (instrfield=blk_dest_inc) {
+        // COPY
+        bits = (55,48);
+        display = dec;
+        allow_conflict = true;
+    }
+
+    define (instrfield=tw_add) {
+        // COPY
+        bits = (63,48);
+    }
+
+    define (instrfield=cp_mask) {
+        // COPY
+        bits = (31,0);
+    }
+
+    define (instrfield=thld_const) {
+        // COPY
+        bits = (31,16);
+        width = 16;
+    }
+
+    define (instrfield=thld_add_cp) {
+        // COPY
+        bits = (15,0);
+        width = 16;
+    }
+
+    define (instrfield=mask_mode) {
+        // COPY
+        bits = 110;
+    }
+
+#define NAME(x,s) copy_ ## x ## s
+#define COPY(x,opc) \
+    define (instr=NAME(x,_)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep(0),ima_fld(0),vec_sz,mask_mode(0), \
+            src_add,dest_add, \
+            src_add_inc,dest_add_inc); \
+        dsyntax = ("copy." #x " %f, %f, %f(%f,%f,%f),%f(%f,%f,%f),%f,%f", \
+            in_dattyp2,vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,__)) { \
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(src_add)),dest_add(is_addr_oram_tram(dest_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x " %f,%f,%f,%f,%f,%f",in_dattyp2,vec_sz,src_add,dest_add,src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_MM)) { \
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x " %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",in_dattyp2,vec_sz, \
+            mem,bank,column,slice, \
+            mem1,bank1,column1,slice1, \
+            src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep(0),ima_fld(1),vec_sz,mask_mode(0), \
+            src_add, \
+            src_add_inc,dest_add_inc); \
+        dsyntax = ("copy." #x ".ind %f, %f, %f,%f,%f", \
+            in_dattyp2, \
+            vec_sz, \
+            src_add_reg(src_add), \
+            src_add_inc,dest_add_inc); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_ind_)) { \
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x ".ind %f,%f,%f,%f,%f",in_dattyp2,vec_sz,src_add,src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_ind_R)) { \
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add((src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x ".ind %f,%f,%f,%f,%f",in_dattyp2,vec_sz,src_add_reg,src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_mask)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep(0),ima_fld(0),vec_sz,mask_mode(1), \
+            src_add,dest_add, \
+            src_add_inc,dest_add_inc,cp_mask); \
+        dsyntax = ("copy." #x ".mask %f, %f, %f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f", \
+            in_dattyp2, vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc, cp_mask); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_n_mask_)) { \
+        width = 128; \
+        alias = NAME(x,_mask)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(src_add)), \
+            dest_add(is_addr_oram_tram(dest_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+        syntax = ("copy." #x ".mask %f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_mask_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep(0),ima_fld(1),vec_sz,mask_mode(1), \
+            src_add,tw_add,  \
+            src_add_inc,dest_add_inc, \
+            cp_mask); \
+        dsyntax = ("copy." #x ".mask.ind %f, %f, %f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz, \
+            src_add_reg(src_add), \
+            src_add_inc,dest_add_inc, \
+            cp_mask); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_n_mask_MM)) { \
+        width = 128; \
+        alias = NAME(x,_mask)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+        syntax = ("copy." #x ".mask %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,mem,bank,column,slice,mem1,bank1,column1,slice1,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_n_mask_ind)) { \
+        width = 128; \
+        alias = NAME(x,_mask_ind)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+\
+        syntax = ("copy." #x ".mask.ind %f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_n_mask_ind_R)) { \
+        width = 128; \
+        alias = NAME(x,_mask_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            src_add((src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+        syntax = ("copy." #x ".mask.ind %f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add_reg,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+        }
+
+    COPY(simple,0)
+    COPY(real_pack,4)
+    COPY(imag_pack,5)
+    COPY(shift,12)
+
+
+#define COPY_RST_N_KEEP(x,opc) \
+    define (instr=NAME(x,_)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep,ima_fld(0),vec_sz,mask_mode(0), \
+            src_add,dest_add, \
+            src_add_inc,dest_add_inc); \
+        dsyntax = ("copy." #x " %f %f, %f, %f(%f,%f,%f),%f(%f,%f,%f),%f,%f", \
+            in_dattyp2,rst_n_keep,vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,__)) { \
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2), \
+            rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(src_add)),dest_add(is_addr_oram_tram(dest_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x " %p %p,%f,%f,%f,%f,%f",in_dattyp2,rst_n_keep,vec_sz,src_add,dest_add,src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_MM)) { \
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2), \
+            rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x " %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f",in_dattyp2,rst_n_keep,vec_sz, \
+            mem,bank,column,slice, \
+            mem1,bank1,column1,slice1, \
+            src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep,ima_fld(1),vec_sz,mask_mode(0), \
+            src_add, \
+            src_add_inc,dest_add_inc); \
+        dsyntax = ("copy." #x ".ind %f %f, %f, %f,%f,%f", \
+            in_dattyp2,rst_n_keep, \
+            vec_sz, \
+            src_add_reg(src_add), \
+            src_add_inc,dest_add_inc); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_ind_)) { \
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2), \
+            rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x ".ind %p %p,%f,%f,%f,%f",in_dattyp2,rst_n_keep,vec_sz,src_add,src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_ind_R)) { \
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2), \
+            rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add((src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+        syntax = ("copy." #x ".ind %p %p,%f,%f,%f,%f",in_dattyp2,rst_n_keep,vec_sz,src_add_reg,src_add_inc,dest_add_inc); \
+    } \
+\
+    define (instr=NAME(x,_mask)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep,ima_fld(0),vec_sz,mask_mode(1), \
+            src_add,dest_add, \
+            src_add_inc,dest_add_inc,cp_mask); \
+        dsyntax = ("copy." #x ".mask %f %f, %f, %f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f", \
+            in_dattyp2,rst_n_keep, vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc, cp_mask); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_n_mask_)) { \
+        width = 128; \
+        alias = NAME(x,_mask)(in_dattyp2(in_dattyp2), \
+            rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(src_add)), \
+            dest_add(is_addr_oram_tram(dest_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+        syntax = ("copy." #x ".mask %p %p,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2,rst_n_keep, \
+            vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_mask_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc), \
+            rst_n_keep,ima_fld(1),vec_sz,mask_mode(1), \
+            src_add,tw_add,  \
+            src_add_inc,dest_add_inc, \
+            cp_mask); \
+        dsyntax = ("copy." #x ".mask.ind %f %f, %f, %f,%f,%f,%f", \
+            in_dattyp2,rst_n_keep, \
+            vec_sz, \
+            src_add_reg(src_add), \
+            src_add_inc,dest_add_inc, \
+            cp_mask); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_n_mask_MM)) { \
+        width = 128; \
+        alias = NAME(x,_mask)(in_dattyp2(in_dattyp2), \
+            rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+        syntax = ("copy." #x ".mask %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f", \
+            in_dattyp2,rst_n_keep, \
+            vec_sz,mem,bank,column,slice,mem1,bank1,column1,slice1,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_n_mask_ind)) { \
+        width = 128; \
+        alias = NAME(x,_mask_ind)(in_dattyp2(in_dattyp2), \
+            rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+\
+        syntax = ("copy." #x ".mask.ind %p %p,%f,%f,%f,%f,%f", \
+            in_dattyp2,rst_n_keep, \
+            vec_sz,src_add,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_n_mask_ind_R)) { \
+        width = 128; \
+        alias = NAME(x,_mask_ind)(in_dattyp2(in_dattyp2),rst_n_keep(rst_n_keep),vec_sz(chk_size(vec_sz)), \
+            src_add((src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+        syntax = ("copy." #x ".mask.ind %p %p,%f,%f,%f,%f,%f", \
+            in_dattyp2,rst_n_keep, \
+            vec_sz,src_add_reg,src_add_inc,dest_add_inc,cp_mask \
+            ); \
+    }
+
+    COPY_RST_N_KEEP(unpack,6)
+    COPY_RST_N_KEEP(partial_real,7)
+    COPY_RST_N_KEEP(partial_imag,8)
+    COPY_RST_N_KEEP(partial_r2i,9)
+    COPY_RST_N_KEEP(partial_i2r,10)
+
+
+    define (instr=copy_scat) {
+        width = 128;
+        fields = (opcode(0x25),in_dattyp2,cp_type(21),
+            rst_n_keep(0),ima_fld(0),vec_sz,mask_mode(0),
+            src_add,dest_add,
+            tw_add);
+        dsyntax = ("copy.scat %f, %f, %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",
+            in_dattyp2,
+            vec_sz,
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+            mem2(decode_mem(tw_add)),bank2(decode_bank(tw_add)),column2(decode_column(tw_add)),slice2(decode_slice(tw_add)));
+        syntax = ("copy.scat %f,%f,%f,%f,%f",in_dattyp2,vec_sz,src_add,dest_add,tw_add);
+        action = { };
+    }
+
+    define (instr=copy_scat_ind) {
+        width = 128;
+        fields = (opcode(0x25),in_dattyp2,cp_type(21),
+            rst_n_keep(0),ima_fld(1),vec_sz,mask_mode(0),
+            src_add,
+            tw_add);
+        dsyntax = ("copy.scat.ind %f, %f, %f,%f(%f,%f,%f)",
+            in_dattyp2,
+            vec_sz,
+            src_add_reg(src_add),
+            mem2(decode_mem(tw_add)),bank2(decode_bank(tw_add)),column2(decode_column(tw_add)),slice2(decode_slice(tw_add)));
+        action = { };
+    }
+
+    define (instr=copy_scat_mask) {
+        width = 128;
+        fields = (opcode(0x25),in_dattyp2,cp_type(21),
+            rst_n_keep(0),ima_fld(0),vec_sz,mask_mode(1),
+            src_add,dest_add,
+            tw_add,src_add_inc,dest_add_inc,cp_mask);
+        dsyntax = ("copy.scat.mask %f, %f, %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f),%f",
+            in_dattyp2,
+            vec_sz,
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+            mem2(decode_mem(tw_add)),bank2(decode_bank(tw_add)),column2(decode_column(tw_add)),slice2(decode_slice(tw_add)),
+            cp_mask);
+        action = { };
+    }
+
+    define (instr=copy_scat_mask_ind) {
+        width = 128;
+        fields = (opcode(0x25),in_dattyp2,cp_type(21),
+            rst_n_keep(0),ima_fld(1),vec_sz,mask_mode(1),
+            src_add,
+            tw_add,
+            src_add_inc,dest_add_inc,
+            cp_mask);
+        dsyntax = ("copy.scat.mask.ind %f, %f, %f,%f(%f,%f,%f),%f",in_dattyp2,vec_sz,
+            src_add_reg(src_add),
+            mem2(decode_mem(tw_add)),bank2(decode_bank(tw_add)),column2(decode_column(tw_add)),slice2(decode_slice(tw_add)),
+            cp_mask);
+        action = { };
+    }
+
+    define (instr=copy_scat_) {
+        width = 128;
+        alias = copy_scat(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add(is_addr_oram(src_add)),
+            dest_add(is_addr_oram(dest_add)),
+            tw_add(tw_add));
+        syntax = ("copy.scat %f,%f,%f,%f,%f",
+            in_dattyp2,
+            vec_sz,src_add,dest_add,tw_add
+        );
+    }
+
+    define (instr=copy_scat_MM) {
+        width = 128;
+        alias = copy_scat(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add(is_addr_oram(translateM(mem,bank,column,slice))),
+            dest_add(is_addr_oram(translateM(mem1,bank1,column1,slice1))),
+            tw_add(is_addr_tram(translateM(mem2,bank2,column2,slice2))));
+        syntax = ("copy.scat %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",
+            in_dattyp2,
+            vec_sz,mem,bank,column,slice,
+            mem1,bank1,column1,slice1,
+            mem2,bank2,column2,slice2
+        );
+    }
+
+    define (instr=copy_scat_ind_) {
+        width = 128;
+        alias = copy_scat_ind(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add((src_add)),
+            tw_add(tw_add));
+        syntax = ("copy.scat.ind %f,%f,%f,%f",
+            in_dattyp2,
+            vec_sz,src_add,tw_add
+        );
+    }
+
+    define (instr=copy_scat_ind_R) {
+        width = 128;
+        alias = copy_scat_ind(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add((src_add_reg)),
+            tw_add(is_addr_tram(translateM(mem2,bank2,column2,slice2))));
+        syntax = ("copy.scat.ind %f,%f,%f,%f(%f,%f,%f)",
+            in_dattyp2,
+            vec_sz,src_add_reg,
+            mem2,bank2,column2,slice2
+        );
+    }
+
+    define (instr=copy_n_mask_scat) {
+        width = 128;
+        alias = copy_scat_mask(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add(is_addr_oram(src_add)),
+            dest_add(is_addr_oram(dest_add)),
+            cp_mask(cp_mask),tw_add(tw_add));
+        syntax = ("copy.scat.mask %f,%f,%f,%f,%f,%f",
+            in_dattyp2,
+            vec_sz,src_add,dest_add,tw_add,cp_mask
+        );
+    }
+
+    define (instr=copy_n_mask_scat_MM) {
+        width = 128;
+        alias = copy_scat_mask(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add(is_addr_oram(translateM(mem,bank,column,slice))),
+            dest_add(is_addr_oram(translateM(mem1,bank1,column1,slice1))),
+            cp_mask(cp_mask),tw_add(is_addr_tram(translateM(mem2,bank2,column2,slice2))));
+        syntax = ("copy.scat.mask %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f),%f",
+            in_dattyp2,vec_sz,
+            mem,bank,column,slice,
+            mem1,bank1,column1,slice1,
+            mem2,bank2,column2,slice2,cp_mask
+        );
+    }
+
+    define (instr=copy_n_mask_scat_ind) {
+        width = 128;
+        alias = copy_scat_mask_ind(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add((src_add)),
+            cp_mask(cp_mask),tw_add(tw_add));
+        syntax = ("copy.scat.mask.ind %f,%f,%f,%f,%f",
+            in_dattyp2,
+            vec_sz,src_add,tw_add,cp_mask
+        );
+    }
+
+    define (instr=copy_n_mask_scat_ind_R) {
+        width = 128;
+        alias = copy_scat_mask_ind(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)),
+            src_add((src_add_reg)),
+            cp_mask(cp_mask),tw_add(is_addr_tram(translateM(mem2,bank2,column2,slice2))));
+        syntax = ("copy.scat.mask.ind %f,%f,%f,%f(%f,%f,%f),%f",
+            in_dattyp2,
+            vec_sz,src_add_reg,mem2,bank2,column2,slice2,cp_mask
+        );
+    }
+
+#define COPYTH(x,opc) \
+    define (instr=NAME(x,_)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc),rst_n_keep(0),ima_fld(0),vec_sz, \
+            pre_proc,rst_acc,mask_mode(0), \
+            src_add, \
+            dest_add, \
+            src_add_inc,dest_add_inc, thld_add_cp); \
+        dsyntax = ("copy." #x " %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc, \
+            mem2(decode_mem(thld_add_cp)),bank2(decode_bank(thld_add_cp)),column2(decode_column(thld_add_cp)),slice2(decode_slice(thld_add_cp))); \
+        action = {}; \
+    } \
+\
+    define (instr=NAME(x,__)) { \
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_oram_tram(src_add)), \
+            dest_add(is_addr_oram_tram(dest_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(thld_add_cp)); \
+\
+        syntax = ("copy." #x " %p %p %p,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,thld_add_cp \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_MM_r)) { \
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(is_addr_wr(src_add_reg))); \
+\
+        syntax = ("copy." #x " %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,mem,bank,column,slice,mem1,bank1,column1,slice1,src_add_inc,dest_add_inc,src_add_reg \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_MM_m)) { \
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(translateM(mem2,bank2,column2,slice2))); \
+\
+        syntax = ("copy." #x " %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f)", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,mem,bank,column,slice,mem1,bank1,column1,slice1, \
+            src_add_inc,dest_add_inc,mem2,bank2,column2,slice2 \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc),rst_n_keep(0),ima_fld(1),vec_sz, \
+            pre_proc,rst_acc,mask_mode(0), \
+            src_add, \
+            dest_add, \
+            src_add_inc,dest_add_inc, thld_add_cp); \
+        dsyntax = ("copy." #x ".ind %p %p %p,%f,%f,%f,%f,%f(%f,%f,%f)", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz, \
+            src_add_reg(src_add), \
+            src_add_inc,dest_add_inc, \
+            mem2(decode_mem(thld_add_cp)),bank2(decode_bank(thld_add_cp)),column2(decode_column(thld_add_cp)),slice2(decode_slice(thld_add_cp))); \
+        action = {}; \
+    } \
+\
+    define (instr=NAME(x,_ind_)) { \
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_wr(src_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(thld_add_cp)); \
+\
+        syntax = ("copy." #x ".ind %p %p %p,%f,%f,%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add,src_add_inc,dest_add_inc,thld_add_cp \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_ind_R_r)) { \
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_wr(src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(is_addr_wr(dest_add_reg))); \
+\
+        syntax = ("copy." #x ".ind %p %p %p,%f,%f,%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add_reg,src_add_inc,dest_add_inc,dest_add_reg \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_ind_R_m)) { \
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_wr(src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(translateM(mem2,bank2,column2,slice2))); \
+\
+        syntax = ("copy." #x ".ind %p %p %p,%f,%f,%f,%f,%f(%f,%f,%f)", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add_reg, \
+            src_add_inc,dest_add_inc,mem2,bank2,column2,slice2 \
+            ); \
+        }
+
+#define COPYTHSTEP(x,opc) \
+    define (instr=NAME(x,_step)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc),rst_n_keep(0),ima_fld(0),vec_sz, \
+            pre_proc,rst_acc,mask_mode(0), \
+            src_add, \
+            dest_add, \
+            src_add_inc,dest_add_inc, thld_const, thld_add_cp); \
+        dsyntax = ("copy." #x ".step %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f),%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc, \
+            mem2(decode_mem(thld_add_cp)),bank2(decode_bank(thld_add_cp)),column2(decode_column(thld_add_cp)),slice2(decode_slice(thld_add_cp)), \
+            thld_const); \
+        action = {}; \
+    } \
+\
+    define (instr=NAME(x,_step_)) { \
+        width = 128; \
+        alias = NAME(x,_step)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_oram_tram(src_add)), \
+            dest_add(is_addr_oram_tram(dest_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(thld_add_cp),thld_const(thld_const)); \
+\
+        syntax = ("copy." #x ".step %p %p %p,%f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,thld_add_cp, \
+            thld_const \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_step_MM_r)) { \
+        width = 128; \
+        alias = NAME(x,_step)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(is_addr_wr(src_add_reg)),thld_const(thld_const)); \
+\
+        syntax = ("copy." #x ".step %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,mem,bank,column,slice,mem1,bank1,column1,slice1,src_add_inc,dest_add_inc,src_add_reg, \
+            thld_const \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_step_MM_m)) { \
+        width = 128; \
+        alias = NAME(x,_step)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(translateM(mem2,bank2,column2,slice2)),thld_const(thld_const)); \
+\
+        syntax = ("copy." #x ".step %p %p %p,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f(%f,%f,%f),%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,mem,bank,column,slice,mem1,bank1,column1,slice1, \
+            src_add_inc,dest_add_inc,mem2,bank2,column2,slice2, \
+            thld_const \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_step_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,cp_type(opc),ima_fld(1),vec_sz, \
+            pre_proc,rst_acc,mask_mode(0), \
+            src_add, \
+            dest_add, \
+            src_add_inc,dest_add_inc, thld_const, thld_add_cp); \
+        dsyntax = ("copy." #x ".step.ind %p %p %p,%f,%f,%f,%f,%f(%f,%f,%f),%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz, \
+            src_add_reg(src_add), \
+            src_add_inc,dest_add_inc, \
+            mem2(decode_mem(thld_add_cp)),bank2(decode_bank(thld_add_cp)),column2(decode_column(thld_add_cp)),slice2(decode_slice(thld_add_cp)), \
+            thld_const); \
+        action = {}; \
+    } \
+\
+    define (instr=NAME(x,_step_ind_)) { \
+        width = 128; \
+        alias = NAME(x,_step_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_wr(src_add)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(thld_add_cp),thld_const(thld_const)); \
+\
+        syntax = ("copy." #x ".step.ind %p %p %p,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add,src_add_inc,dest_add_inc,thld_add_cp, \
+            thld_const \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_step_ind_R_r)) { \
+        width = 128; \
+        alias = NAME(x,_step_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_wr(src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(is_addr_wr(dest_add_reg)),thld_const(thld_const)); \
+\
+        syntax = ("copy." #x ".step.ind %p %p %p,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add_reg,src_add_inc,dest_add_inc,dest_add_reg, \
+            thld_const \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_step_ind_R_m)) { \
+        width = 128; \
+        alias = NAME(x,_step_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            pre_proc(pre_proc),rst_acc(rst_acc), \
+            src_add(is_addr_wr(src_add_reg)), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            thld_add_cp(translateM(mem2,bank2,column2,slice2)),thld_const(thld_const)); \
+\
+        syntax = ("copy." #x ".step.ind %p %p %p,%f,%f,%f,%f,%f(%f,%f,%f),%f", \
+            in_dattyp2,pre_proc,rst_acc, \
+            vec_sz,src_add_reg, \
+            src_add_inc,dest_add_inc,mem2,bank2,column2,slice2, \
+            thld_const \
+            ); \
+        }
+
+    COPYTH(thld_ge,1)
+    COPYTH(thld_lt,2)
+    COPYTH(thld_gt,17)
+    COPYTHSTEP(thld_ge,18)
+    COPYTHSTEP(thld_gt,19)
+    COPYTHSTEP(thld_lt,20)
+
+
+#define COPYTRANS(x,opc) \
+    define (instr=NAME(x,_)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,pre_proc(0),rst_acc(0),cp_type(opc), \
+            rst_n_keep(0),ima_fld(0),vec_sz,mask_mode(0), \
+            src_add, \
+            dest_add, \
+            blk_src_inc,blk_dest_inc, \
+            src_add_inc,dest_add_inc, \
+            cp_mask(0)); \
+        dsyntax = ("copy." #x " %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc \
+            ); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,__)) { \
+\
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(src_add)), \
+            dest_add(is_addr_oram_tram(dest_add)), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+\
+        syntax = ("copy." #x " %f,%f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_MM)) { \
+\
+        width = 128; \
+        alias = NAME(x,_)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+\
+        syntax = ("copy." #x " %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,mem,bank,column,slice,mem1,bank1,column1,slice1,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,pre_proc(0),rst_acc(0),cp_type(opc), \
+            rst_n_keep(0),ima_fld(1),vec_sz,mask_mode(0), \
+            src_add, \
+            dest_add(0), \
+            blk_src_inc,blk_dest_inc, \
+            src_add_inc,dest_add_inc, \
+            cp_mask(0)); \
+        dsyntax = ("copy." #x ".ind %f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add_reg(src_add),src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc \
+            ); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_ind_)) { \
+\
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add)), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+\
+        syntax = ("copy." #x ".ind %f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_ind_R)) { \
+\
+        width = 128; \
+        alias = NAME(x,_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add_reg)), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc)); \
+\
+        syntax = ("copy." #x ".ind %f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add_reg,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_mask)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,pre_proc(0),rst_acc(0),cp_type(opc), \
+            rst_n_keep(0),ima_fld(0),vec_sz,mask_mode(1), \
+            src_add, \
+            dest_add, \
+            blk_src_inc,blk_dest_inc, \
+            src_add_inc,dest_add_inc, \
+            cp_mask); \
+        dsyntax = ("copy." #x ".mask %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz, \
+            mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)), \
+            mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)), \
+            src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc,cp_mask \
+            ); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_n_mask)) { \
+\
+        width = 128; \
+        alias = NAME(x,_mask)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(src_add)), \
+            dest_add(is_addr_oram_tram(dest_add)), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+\
+        syntax = ("copy." #x ".mask %f,%f,%f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_n_mask_MM)) { \
+\
+        width = 128; \
+        alias = NAME(x,_mask)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_oram_tram(translateM(mem,bank,column,slice))), \
+            dest_add(is_addr_oram_tram(translateM(mem1,bank1,column1,slice1))), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+\
+        syntax = ("copy." #x ".mask %f,%f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,mem,bank,column,slice, \
+            mem1,bank1,column1,slice1,src_add_inc,dest_add_inc, \
+            blk_src_inc,blk_dest_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_mask_ind)) { \
+        width = 128; \
+        fields = (opcode(0x25),in_dattyp2,pre_proc(0),rst_acc(0),cp_type(opc), \
+            rst_n_keep(0),ima_fld(1),vec_sz,mask_mode(1), \
+            src_add, \
+            blk_src_inc,blk_dest_inc, \
+            src_add_inc,dest_add_inc, \
+            cp_mask); \
+        dsyntax = ("copy." #x ".mask.ind %f,%f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2,vec_sz,src_add_reg(src_add),src_add_inc, \
+            dest_add_inc,blk_src_inc, blk_dest_inc,cp_mask \
+            ); \
+        action = { }; \
+    } \
+\
+    define (instr=NAME(x,_n_mask_ind)) { \
+\
+        width = 128; \
+        alias = NAME(x,_mask_ind)(in_dattyp2(in_dattyp2), \
+            vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add)), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+\
+        syntax = ("copy." #x ".mask.ind %f,%f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc,cp_mask \
+            ); \
+    } \
+\
+    define (instr=NAME(x,_n_mask_ind_R)) { \
+\
+        width = 128; \
+        alias = NAME(x,_mask_ind)(in_dattyp2(in_dattyp2),vec_sz(chk_size(vec_sz)), \
+            src_add(is_addr_wr(src_add_reg)), \
+            blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc), \
+            src_add_inc(src_add_inc),dest_add_inc(dest_add_inc), \
+            cp_mask(cp_mask)); \
+\
+        syntax = ("copy." #x ".mask.ind %f,%f,%f,%f,%f,%f,%f,%f", \
+            in_dattyp2, \
+            vec_sz,src_add_reg,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc,cp_mask \
+            ); \
+    }
+
+    COPYTRANS(trans,3)
+    COPYTRANS(trans_bck_x4,16)
+    COPYTRANS(trans_bck_x8,14)
+    COPYTRANS(trans_fwd_x4,15)
+    COPYTRANS(trans_fwd_x8,13)
+
+
+    define (instr=copy_clear) {
+        width = 128;
+        fields = (opcode(0x25),vec_sz,
+            src_add(0x8000), dest_add,cp_type(11),
+            mask_mode(1),dest_add_inc,
+            cp_mask
+        );
+        dsyntax = ("copy.clear %f,%f(%f,%f,%f),%f,%f",vec_sz,mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),dest_add_inc,cp_mask);
+        syntax = ("copy.clear %f,%f,%f,%f",vec_sz,dest_add,dest_add_inc,cp_mask);
+        action = {};
+    }
+
+    define (instr=copy_clear_MM) {
+        width = 128;
+        alias = copy_clear(vec_sz(chk_size(vec_sz)),
+            dest_add(is_addr_oram_tram(translateM(mem,bank,column,slice))),
+            dest_add_inc(dest_add_inc),
+            cp_mask(cp_mask)
+        );
+
+        syntax = ("copy.clear %f,%f(%f,%f,%f),%f,%f",vec_sz,mem,bank,column,slice,dest_add_inc,cp_mask);
+    }
+
+}
