@@ -1,0 +1,590 @@
+define (arch=spt_sort) {
+
+	/*
+	sort in_dattyp pre_proc set_size in_pack           vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+	sort in_dattyp pre_proc set_size in_pack           vec_sz src_add,           src_add_inc, dest_add_inc
+	sort in_dattyp pre_proc set_size in_pack sort_rank vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+	sort in_dattyp pre_proc set_size in_pack sort_rank vec_sz src_add,           src_add_inc, dest_add_inc
+	*/
+
+	  define (instrfield=set_size) {
+	    bits = (17,16);
+	    enumerated = (".ss4", ".ss8", ".ss16");
+	    value = ".ss4";
+	  }
+
+	  define (instrfield=sort_type) {
+	    bits = (112);
+	    enumerated = (".setsort",".slidesort");
+	  }
+
+	  define (instrfield=sort_rank) {
+	    bits = (21,18);
+	    display = dec;
+	  }
+
+	  define (instr=sort) {
+	    width = 128;
+	    fields = (opcode(0x2D),in_dattyp2,pre_proc,set_size,ima_fld(0),
+						in_pack, vec_sz, sort_type(0),
+						src_add, dest_add,
+						src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sort %f %f %f %f, %f, %f%f_%f%f, %f%f_%f%f, %f, %f",
+					in_dattyp2, pre_proc, set_size,
+					in_pack,vec_sz,
+					DS_MEM1(src_add),
+					DS_MEM(dest_add),
+					src_add_inc, dest_add_inc);
+	    syntax = ("sort %p %p %p %p,%f,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc);
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned
+		);
+
+		action = { };
+	  }
+
+	  define (instr=sort_ind) {
+	    width = 128;
+	    fields = (opcode(0x2D),in_dattyp2,pre_proc,set_size,ima_fld(1),
+					in_pack, vec_sz, sort_type(0),
+					src_add,
+					src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sort.ind %f %f %f %f, %f, %f, %f, %f",
+					in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+					ds_src_ind(src_add),
+					src_add_inc, dest_add_inc);
+	    syntax = ("sort.ind %p %p %p %p,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack,vec_sz,
+					src_add, src_add_inc, dest_add_inc);
+
+		asm_rules = (
+			R_src_ind
+		);
+
+		action = { };
+	  }
+
+	  define (instr=sort_slide) {
+	    width = 128;
+	    fields = (opcode(0x2D),in_dattyp2,pre_proc,set_size,ima_fld(0),
+						in_pack, vec_sz, sort_type(1),
+						src_add, dest_add,sort_rank,
+						src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sort %p %p %p %p %f, %f,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size,
+					in_pack,sort_rank,vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc);
+
+	    syntax = ("sort %p %p %p %p %f, %f,%f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc);
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned
+		);
+
+		action = { };
+	  }
+
+	  define (instr=sort_slide_ind) {
+	    width = 128;
+	    fields = (opcode(0x2D),in_dattyp2,pre_proc,set_size,ima_fld(1),
+					in_pack, vec_sz, sort_type(1),sort_rank,
+					src_add,
+					src_add_inc,dest_add_inc);
+
+	    dsyntax = ("sort.ind %p %p %p %p %f, %f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc);
+
+	    syntax = ("sort.ind %p %p %p %p %f, %f,%f,%f,%f",
+					in_dattyp2, pre_proc, set_size, in_pack, sort_rank, vec_sz,
+					src_add, src_add_inc, dest_add_inc);
+
+		asm_rules = (
+			R_src_ind
+		);
+
+		action = { };
+	  }
+
+
+/*
+*/
+	   define (instrfield=in_tag) {
+		// MAXS
+	    bits = 116;
+	    enumerated = (".no_tag_in", ".tag_in");
+	  }
+
+	    define (instrfield=max_mode) {
+		// MAXS
+	    bits = (115, 114);
+	    enumerated = (".gm", ".lm", ".lmth", ".th");
+	  }
+
+	    define (instrfield=cyc_extn) {
+		// MAXS
+	    bits = 113;
+	    enumerated = (".no_cyc_ext", ".cyc_ext");
+	  }
+
+	    define (instrfield=in_pack) {
+		// MAXS
+	    bits = (111,110);
+	    enumerated = (".in_24real", ".in_24im", ".in_48packed");
+	  }
+
+	    define (instrfield=maxsn_sel) {
+	    // MAXS
+	    bits = (31,30);
+	    enumerated = (".no_maxsn", reserved, ".maxsn_8", ".maxsn_4");
+	  }
+
+	    define (instrfield=gm_preload) {
+		// MAXS
+	    bits = 23;
+	    enumerated = (".no_preload", ".preload");
+	  }
+
+	    define (instrfield=thld_mode) {
+		// MAXS
+	    bits = 22;
+	    enumerated = (".gt_thld", ".ge_thld");
+	  }
+
+	    define (instrfield=out_mode) {
+		// MAXS
+	    bits = (21,20);
+	    enumerated = (".bfld", ".tag", ".idx");
+		value = ".bfld";
+	  }
+
+	    define (instrfield=OM) {
+		  pseudo=true;
+		  width = 2;
+		  enumerated=("",".tag", ".idx");
+	  }
+
+	    define (instrfield=bitfld_size) {
+		// MAXS
+	    bits = (19,18);
+	    enumerated = (".8bits", ".16bits", ".24bits");
+		value = ".8bits";
+	  }
+
+	    define (instrfield=BFLD) {
+		  pseudo=true;
+		  width = 2;
+		  enumerated=("",".8bits", ".16bits", ".24bits");
+	  }
+
+	  unsigned get_bfld(unsigned om, unsigned bfld) {
+		  return om == 0 ? 1 + bfld : 0;
+	  }
+	
+	    define (instrfield=thld_add) {
+		// MAXS, COPY
+	    bits = (15,0);
+	  }
+
+	  define (instrfield=gm_add) {
+		// MAXS
+	    bits = (15,0);
+	  }
+
+	  unsigned maxs_checksize(unsigned inpack, unsigned sz, unsigned mode) {
+	    switch (mode) {
+	    case 1:
+		if (inpack >=2) {
+		   if (sz != 32) error(0, "illegal size for this maxs16 instruction ", sz);
+		} else
+		   if (sz != 16) error(0, "illegal size for this maxs16 instruction ", sz);
+		break;
+	    case 2:
+		if (inpack >=2) {
+		   if (sz != 32) error(0, "illegal size for this maxs8 instruction ", sz);
+		} else
+		   if (sz != 16) error(0, "illegal size for this maxs8 instruction ", sz);
+		break;
+	    case 3:
+		if (inpack >=2) {
+		   if (sz != 32) error(0, "illegal size for this maxs4 instruction ", sz);
+		} else
+		   if (sz != 16) error(0, "illegal size for this maxs4 instruction ", sz);
+		break;
+	    }
+	    return sz;
+	  }
+
+	  int tag_type(int tag, int dattyp) {
+	    if (tag && dattyp != 2)
+	      error(0, "illegal type for tag, must be .log2 ", tag);
+	    return tag;
+	  }
+
+// MAXS instruction 
+// maxs maxsn_sel in_dattyp pre_proc in_pack vec_sz src_add, dest_add, src_add_inc, dest_add_inc, gm_add
+	  define (instr=maxsGM) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(0), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(1), out_mode(0), gm_add, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxs.gm %f %f %f %f, %f, %f%f_%f%f, %f%f_%f%f, %f, %f, %f%f_%f%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					DS_MEM1(src_add),
+					DS_MEM(dest_add),
+					src_add_inc, dest_add_inc,
+					DS_MEM2(gm_add));
+	     syntax = ("maxs.gm %p %p %p %p, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc,
+					gm_add);
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned,
+			R_gm_wr_opram
+		);
+
+		action = { };
+		}
+
+// maxs.gm maxsn_sel in_dattyp pre_proc in_pack out_mode gm_preload vec_sz src_add, dest_add, src_add_inc, dest_add_inc, gm_add
+
+	  define (instr=maxsGM_ind) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(1), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(1), out_mode(0), gm_add, vec_sz, src_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxs.gm.ind %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					ds_src_ind(src_add),
+					src_add_inc, dest_add_inc,
+					DS_MEM2(gm_add));
+	     syntax = ("maxs.gm.ind %p %p %p %p,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,
+					gm_add);
+
+		asm_rules = (
+			R_src_ind,
+			R_gm_wr_opram
+		);
+
+		action = { };
+		}
+
+	  define (instr=maxsGM_no_prel) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(0), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(0), out_mode(0), gm_add(0), vec_sz, src_add, dest_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxs.gm %f %f %f %f, %f, %f%f_%f%f, %f%f_%f%f, %f, %f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					DS_MEM1(src_add),
+					DS_MEM(dest_add),
+					src_add_inc, dest_add_inc);
+	     syntax = ("maxs.gm %p %p %p %p, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc);
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned
+		);
+
+		action = { };
+		}
+
+// maxs.gm maxsn_sel in_dattyp pre_proc in_pack out_mode vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+
+	  define (instr=maxsGM_no_prel_ind) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(1), in_dattyp2, pre_proc, max_mode(0), maxsn_sel,
+	    		in_pack, gm_preload(0), out_mode(0), gm_add(0), vec_sz, src_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxs.gm.ind %f %f %f %f, %f, %f, %f, %f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					ds_src_ind(src_add),
+					src_add_inc, dest_add_inc);
+	     syntax = ("maxs.gm.ind %p %p %p %p, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc);
+
+		asm_rules = (
+			R_src_ind
+		);
+
+		action = { };
+		}
+
+
+// maxs maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+// maxs maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn vec_sz src_add, src_add_inc, dest_add_inc
+// maxs maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+// maxs maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn vec_sz src_add, src_add_inc, dest_add_inc
+	  define (instr=maxsLM) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(0), max_mode(1), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, bitfld_size,
+					vec_sz, src_add, dest_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxs.lm %f %f %f %f %f %f %f %f, %f, %f%f_%f%f, %f%f_%f%f, %f, %f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), in_tag, cyc_extn, vec_sz,
+					DS_MEM1(src_add),
+					DS_MEM(dest_add),
+					src_add_inc, dest_add_inc);
+	   
+	     syntax = ("maxs.lm %p %p %p %p %p %p %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc, bitfld_size(out_mode ? 0 : 0));
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned
+		);
+
+		action = { };
+		}
+
+	  define (instr=maxsLM_ind) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(1), max_mode(1), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, bitfld_size,
+					vec_sz, src_add, src_add_inc, dest_add_inc);
+
+	     dsyntax = ("maxs.lm.ind %f %f %f %f %f %f %f %f, %f, %f, %f, %f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), in_tag, cyc_extn, vec_sz,
+					ds_src_ind(src_add),
+					src_add_inc, dest_add_inc);
+	   
+	     syntax = ("maxs.lm.ind %p %p %p %p %p %p %f, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc, bitfld_size(out_mode ? 0 : 0));
+
+		asm_rules = (
+			R_src_ind
+		);
+
+		action = { };
+		}
+
+	  define (instr=maxsLM_bfld) {
+		width = 128;
+		alias = maxsLM(in_dattyp2(in_dattyp2),
+				pre_proc(pre_proc),maxsn_sel(maxsn_sel),
+				in_tag(in_tag), cyc_extn(cyc_extn),
+				in_pack(in_pack),
+				out_mode(0), bitfld_size(bitfld_size),
+				vec_sz(chk_size(vec_sz)),
+				src_add(src_add), dest_add(dest_add),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+	    syntax = ("maxs.lm %p %p %p %p %p %p %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc);
+
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned
+		);
+	}
+
+	  define (instr=maxsLM_bfld_ind) {
+		width = 128;
+		 alias = maxsLM_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn),out_mode(0),
+					in_pack(in_pack),bitfld_size(bitfld_size),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+		 syntax = ("maxs.lm.ind %p %p %p %p %f %f %f, %f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc);
+
+		asm_rules = (
+			R_src_ind
+		);
+	  }
+
+// maxs maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn thld_mode  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+// maxs maxsn_sel in_dattyp pre_proc in_pack out_mode    in_tag cyc_extn thld_mode  vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+// maxs maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn thld_mode  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+// maxs maxsn_sel in_dattyp pre_proc in_pack bitfld_size in_tag cyc_extn thld_mode  vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+
+	define (instr=maxsLMTH) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(0), max_mode(2), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, thld_mode, bitfld_size,
+					vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, thld_add);
+
+	     dsyntax = ("maxs.lmth %f %f %f %f %f %f %f %f %f, %f, %f%f_%f%f, %f%f_%f%f, %f, %f, %f%f_%f%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), in_tag, cyc_extn, thld_mode, vec_sz,
+					DS_MEM1(src_add),
+					DS_MEM(dest_add),
+					src_add_inc, dest_add_inc,
+					DS_MEM2(thld_add));
+	   
+	     syntax = ("maxs.lmth %p %p %p %p %p %p %f %f, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add, dest_add, src_add_inc, dest_add_inc, thld_add, bitfld_size(out_mode ? 0 : 0));
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned,
+			R_thld_wr_opram
+		);
+
+		action = { };
+	}
+
+	  define (instr=maxsLMTH_ind) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(1), max_mode(2), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, cyc_extn, in_tag, thld_mode, bitfld_size,
+					vec_sz, src_add, src_add_inc, dest_add_inc,thld_add);
+
+	     dsyntax = ("maxs.lmth.ind %f %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, OM(out_mode), BFLD(get_bfld(out_mode, bitfld_size)), 
+					in_tag, cyc_extn, thld_mode, vec_sz,
+					ds_src_ind(src_add),
+					src_add_inc, dest_add_inc,
+					DS_MEM2(thld_add));
+
+	     syntax = ("maxs.lmth.ind %p %p %p %p %p %p %f %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,thld_add, bitfld_size(out_mode ? 0 : 0));
+
+		asm_rules = (
+			R_src_ind,
+			R_thld_wr_opram
+		);
+
+		action = { };
+		}
+
+	  define (instr=maxsLMTH_bfld) {
+		width = 128;
+	     alias = maxsLMTH(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add),
+					dest_add(dest_add),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add));
+
+	     syntax = ("maxs.lmth %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc,thld_add);
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned,
+			R_thld_wr_opram
+		);
+		}
+
+	define (instr=maxsLMTH_bfld_ind) {
+		width = 128;
+	     alias = maxsLMTH_ind(in_dattyp2(in_dattyp2),
+					pre_proc(pre_proc),out_mode(0),maxsn_sel(maxsn_sel),
+					in_tag(in_tag), cyc_extn(cyc_extn), thld_mode(thld_mode),
+					in_pack(in_pack),bitfld_size(bitfld_size),out_mode(0),
+					vec_sz(chk_size(vec_sz)),
+					src_add(src_add),
+					src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),thld_add(thld_add));
+
+	     syntax = ("maxs.lmth.ind %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, bitfld_size, in_tag, cyc_extn, thld_mode, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,thld_add);
+
+		asm_rules = (
+			R_src_ind,
+			R_thld_wr_opram
+		);
+	}
+
+
+// maxs maxsn_sel in_dattyp pre_proc in_pack out_mode thld_mode vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+// maxs maxsn_sel in_dattyp pre_proc in_pack out_mode thld_mode vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+	define (instr=maxsTH) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(0), max_mode(3), maxsn_sel, in_dattyp2, pre_proc,
+	    			in_pack, out_mode, thld_mode,
+					vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, thld_add);
+
+	     dsyntax = ("maxs.th %f %f %f %f %f %f, %f, %f%f_%f%f, %f%f_%f%f, %f, %f, %f%f_%f%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					DS_MEM1(src_add),
+					DS_MEM(dest_add),
+					src_add_inc, dest_add_inc, 
+					DS_MEM2(thld_add));
+	   
+	     syntax = ("maxs.th %p %p %p %p %p %p, %f,%f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					src_add,
+					dest_add,
+					src_add_inc, dest_add_inc, thld_add);
+
+		asm_rules = (
+			R_src_oram_aligned,
+			R_dest_oram_aligned,
+			R_thld_wr_opram
+		);
+
+		action = { };
+	}
+
+	  define (instr=maxsTH_ind) {
+		width = 128;
+		fields = (opcode(0x27), ima_fld(1), max_mode(3), maxsn_sel, in_dattyp2, pre_proc, thld_mode,
+	    			in_pack, out_mode, vec_sz, src_add, src_add_inc, dest_add_inc,thld_add);
+
+	     dsyntax = ("maxs.th.ind  %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					ds_src_ind(src_add),
+					src_add_inc, dest_add_inc,
+					DS_MEM2(thld_add));
+	   
+	     syntax = ("maxs.th.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f",
+					maxsn_sel, in_dattyp2, pre_proc, in_pack, out_mode, thld_mode, vec_sz,
+					src_add,
+					src_add_inc, dest_add_inc,thld_add);
+
+		asm_rules = (
+			R_src_ind,
+			R_thld_wr_opram
+		);
+
+		action = { };
+		}
+
+}
