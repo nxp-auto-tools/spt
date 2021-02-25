@@ -1,0 +1,141 @@
+define (arch=spt3_hist) {
+
+  define (instrfield=in_dattyp2) {
+	// COPY, MAXS, SORT
+	bits = (121,120);
+	enumerated = (".real",".cmplx",".log2");
+	value = ".real";
+  }
+
+    define (instrfield=pre_proc) {
+	// COPY, HIST, MAXS
+    bits = (119,118);
+    enumerated = (".no_preproc", ".abs_proc", ".mag_proc");
+  }
+
+    define (instrfield=hist_mode) {
+	// HIST
+    bits = (117,116);
+    enumerated = (".read_store", ".read", ".acc", ".store");
+  }
+
+    define (instrfield=bin_sz) {
+	// HIST
+    bits = (115,114);
+    enumerated = (".16_24bins", ".32bins", ".64bins");
+  }
+
+    define (instrfield=pack_en) {
+	// HIST
+    bits = (111,110);
+    enumerated = (".no_pack_real", ".no_pack_im", ".pack");
+  }
+
+    define (instrfield=threshold) {
+	// HIST
+    bits = (15,10);
+  }
+
+    define (instrfield=dat_sz) {
+	// HIST
+    bits = 0;
+    enumerated = (".16bits", ".24bits");
+  }
+  
+  define (instrfield=prel) {
+	// HIST
+    bits = 113;
+    enumerated = (".no_preload", ".preload");
+  }
+
+/*
+hist in_dattyp preproc hist_mode bin_sz prel pack_en vec_sz src_add, dest_add, src_add_inc, dest_add_inc, threshold, dat_sz
+hist in_dattyp preproc hist_mode bin_sz prel pack_en vec_sz src_add,           src_add_inc, dest_add_inc, threshold, dat_sz
+*/
+  define (instr=hist) {
+	width = 128;
+    fields = (opcode(0x24),in_dattyp2,pre_proc,hist_mode,
+    		bin_sz, prel, ima_fld(0),pack_en,vec_sz,src_add,dest_add,
+			src_add_inc,dest_add_inc,threshold,dat_sz);
+
+	dsyntax = ("hist %p %p %p %p %p %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f,%f",
+				in_dattyp2, pre_proc, hist_mode, bin_sz, prel, pack_en, vec_sz,
+				mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+				mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)),
+				src_add_inc, dest_add_inc, threshold, dat_sz);
+
+	syntax = ("hist %p %p %p %p %p %f, %f,%f,%f,%f,%f,%f,%f",
+				in_dattyp2, pre_proc, hist_mode, bin_sz, prel, pack_en, vec_sz,
+				src_add,
+				dest_add,
+				src_add_inc, dest_add_inc, threshold, dat_sz);
+	action = { };
+  }
+
+  // HIST instruction 
+  define (instr=histMM) {
+	width = 128;
+	 alias = hist(in_dattyp2(in_dattyp2),pre_proc(pre_proc),hist_mode(hist_mode),
+				bin_sz(bin_sz), prel(prel), pack_en(pack_en),vec_sz(chk_size(vec_sz)),
+				src_add(is_addr_oram(translateM(mem,bank,column,slice))),
+				dest_add(translateM(mem1,bank1,column1,slice1)),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+				threshold(threshold), dat_sz(dat_sz));
+
+	 syntax = ("hist %p %p %p %p %p %f, %f,%f(%f,%f,%f),%f(%f,%f,%f),%f,%f,%f,%f",
+				in_dattyp2, pre_proc, hist_mode, bin_sz, prel, pack_en, vec_sz,
+				mem,bank,column,slice,
+				mem1,bank1,column1,slice1,
+				src_add_inc, dest_add_inc, threshold, dat_sz);
+  }
+
+  define (instr=histMR) {
+	width = 128;
+	 alias = hist(in_dattyp2(in_dattyp2),pre_proc(pre_proc),hist_mode(hist_mode),
+				bin_sz(bin_sz),prel(prel), pack_en(pack_en),vec_sz(chk_size(vec_sz)),
+				src_add(is_addr_oram(translateM(mem,bank,column,slice))),
+				dest_add(translateR(dest_add_reg)),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+				threshold(threshold), dat_sz(dat_sz));
+
+	 syntax = ("hist %p %p %p %p %p %f, %f,%f(%f,%f,%f),%f,%f,%f,%f,%f",
+				in_dattyp2, pre_proc, hist_mode, bin_sz, prel, pack_en, vec_sz,
+				mem,bank,column,slice,
+				dest_add_reg,
+				src_add_inc, dest_add_inc, threshold, dat_sz);
+  }
+
+  define (instr=hist_ind) {
+	width = 128;
+    fields = (opcode(0x24),in_dattyp2,pre_proc,hist_mode,
+    		bin_sz, prel, ima_fld(1),pack_en,vec_sz,src_add,
+			src_add_inc,dest_add_inc,threshold,dat_sz);
+
+	dsyntax = ("hist.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f,%f",
+				in_dattyp2, pre_proc, hist_mode, bin_sz, prel, pack_en, vec_sz,
+				src_add_reg(src_add),
+				src_add_inc, dest_add_inc, threshold, dat_sz);
+
+	syntax = ("hist.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f,%f",
+				in_dattyp2, pre_proc, hist_mode, bin_sz, prel, pack_en, vec_sz,
+				src_add,
+				src_add_inc, dest_add_inc, threshold, dat_sz);
+	action = { };
+  }
+
+
+  define (instr=hist_ind_R) {
+	width = 128;
+	 alias = hist_ind(in_dattyp2(in_dattyp2),pre_proc(pre_proc),hist_mode(hist_mode),
+				bin_sz(bin_sz),prel(prel),pack_en(pack_en),vec_sz(chk_size(vec_sz)),
+				src_add(translateR(src_add_reg)),
+				src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+				threshold(threshold), dat_sz(dat_sz));
+
+	 syntax = ("hist.ind %p %p %p %p %p %f, %f,%f,%f,%f,%f,%f",
+				in_dattyp2, pre_proc, hist_mode, bin_sz, prel, pack_en, vec_sz,
+				src_add_reg,
+				src_add_inc, dest_add_inc, threshold, dat_sz);
+  }
+
+}

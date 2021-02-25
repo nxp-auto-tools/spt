@@ -1,0 +1,682 @@
+
+define (arch=spt3_alu) {
+
+  define (instrfield=shift_fld) {
+    bits = 120;
+    enumerated = (".noshift",(".shift",""));
+    value = "";
+  }
+
+  define (instrfield=modulo_val) {
+    bits = (100,96);
+    enumerated = (
+      (".mod0",""),  ".mod1",  ".mod2",  ".mod3",  ".mod4",  ".mod5",
+      ".mod6",  ".mod7",  ".mod8",  ".mod9",  ".mod10", ".mod11",
+      ".mod12", ".mod13", ".mod14", ".mod15", ".mod16", ".mod17",
+      ".mod18", ".mod19", ".mod20", ".mod21", ".mod22", ".mod23",
+      ".mod24");
+  }
+
+  define (instr=addMM) {
+    width = 128;
+    fields = (opcode(0x3),immed_or_reg_src_fld(1),
+		shift_fld, modulo_val,
+		imm_dat(0), src_add, src2_add, dest_add);
+
+	dsyntax = ("add %f %f %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",shift_fld,modulo_val,
+			mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+			mem2(decode_mem(src2_add)),bank2(decode_bank(src2_add)),column2(decode_column(src2_add)),slice2(decode_slice(src2_add)),
+			mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+    syntax = ("add %p %p %f,%f,%f",shift_fld,modulo_val,src_add,src2_add,dest_add);
+    action = { };
+  }
+
+	  define (instr=add_m_r_m) {
+		alias = addMM(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("add %p %p %f(%f,%f,%f),%f,%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,any_src2_add_reg,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=add_m_m_m) {
+		alias = addMM(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				src2_add(is_addr_wr_spr(translateM(mem2,bank2,column2,slice2))),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("add %p %p %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,mem2,bank2,column2,slice2,mem1,bank1,column1,slice1);
+	  }
+
+	  define (instr=add_r_r_m) {
+		alias = addMM(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("add %p %p %f,%f,%f(%f,%f,%f)",shift_fld,modulo_val,any_src_add_reg,any_src2_add_reg,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=add_r_r_r) {
+		alias = addMM(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("add %p %p %f,%f,%f",shift_fld,modulo_val,any_src_add_reg,any_src2_add_reg,any_dest_add_reg);
+	  }
+	
+	  define (instr=add_m_r_r) {
+		alias = addMM(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("add %p %p %f(%f,%f,%f),%f,%f",shift_fld,modulo_val,mem,bank,column,slice,any_src2_add_reg,any_dest_add_reg);
+	  }
+
+  define (instr=addi) {
+
+    width = 128;
+    fields = (opcode(0x3),immed_or_reg_src_fld(0),
+		shift_fld,modulo_val,
+		imm_dat, src_add, src2_add(0), dest_add);
+
+	dsyntax = ("add %f %f %f(%f,%f,%f),#%f,%f(%f,%f,%f)",shift_fld,modulo_val,
+			mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+			imm_dat,
+			mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+    syntax = ("add %p %p %f,#%f,%f",shift_fld,modulo_val,src_add,imm_dat,dest_add);
+    action = { };
+  }
+
+	  define (instr=add_m_i_m) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("add %p %p %f(%f,%f,%f),%f,%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=add_r_i_m) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("add %p %p %f,%f,%f(%f,%f,%f)",shift_fld,modulo_val,any_src_add_reg,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=add_r_i_r) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("add %p %p %f,%f,%f",shift_fld,modulo_val,any_src_add_reg,imm_dat,any_dest_add_reg);
+	  }
+	
+	  define (instr=add_m_i_r) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("add %p %p %f(%f,%f,%f),%f,%f",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,any_dest_add_reg);
+	  }
+
+	  define (instr=add_m_i_m_X) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("add %p %p %f(%f,%f,%f),#%f,%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=add_r_i_m_X) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("add %p %p %f,#%f,%f(%f,%f,%f)",shift_fld,modulo_val,any_src_add_reg,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=add_r_i_r_X) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("add %p %p %f,#%f,%f",shift_fld,modulo_val,any_src_add_reg,imm_dat,any_dest_add_reg);
+	  }
+	
+	  define (instr=add_m_i_r_X) {
+		alias = addi(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("add %p %p %f(%f,%f,%f),#%f,%f",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,any_dest_add_reg);
+	  }
+
+
+/*
+** sub   	src shift_fld modulo_val src_add, src2_add, dest_add
+*/ 
+  define (instr=sub) {
+
+    width = 128;
+    fields = (opcode(0xB),immed_or_reg_src_fld(1),
+    shift_fld,modulo_val,
+	imm_dat(0), src_add, src2_add, dest_add);
+
+	dsyntax = ("sub %f %f %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",shift_fld,modulo_val,
+			mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+			mem2(decode_mem(src2_add)),bank2(decode_bank(src2_add)),column2(decode_column(src2_add)),slice2(decode_slice(src2_add)),
+			mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+    syntax = ("sub %p %p %f,%f,%f",shift_fld,modulo_val,src_add,src2_add,dest_add);
+    action = { };
+  }
+
+  define (instr=sub_m_r_m) {
+	alias = sub(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateM(mem,bank,column,slice)),
+			src2_add(translateR(any_src2_add_reg)),
+			dest_add(translateM(mem1,bank1,column1,slice1)));
+	syntax = ("sub %p %p %f(%f,%f,%f),%f,%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,any_src2_add_reg,mem1,bank1,column1,slice1);
+  }
+
+  define (instr=sub_m_m_m) {
+	alias = sub(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateM(mem,bank,column,slice)),
+			src2_add(is_addr_wr_spr(translateM(mem2,bank2,column2,slice2))),
+			dest_add(translateM(mem1,bank1,column1,slice1)));
+	syntax = ("sub %p %p %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,mem2,bank2,column2,slice2,mem1,bank1,column1,slice1);
+  }
+
+	  define (instr=sub_r_r_m) {
+		alias = sub(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("sub %p %p %f,%f,%f(%f,%f,%f)",shift_fld,modulo_val,any_src_add_reg,any_src2_add_reg,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=sub_r_r_r) {
+		alias = sub(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateR(any_src_add_reg)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("sub %p %p %f,%f,%f",shift_fld,modulo_val,any_src_add_reg,any_src2_add_reg,any_dest_add_reg);
+	  }
+	
+	  define (instr=sub_m_r_r) {
+		alias = sub(shift_fld(shift_fld), modulo_val(modulo_val),
+				src_add(translateM(mem,bank,column,slice)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("sub %p %p %f(%f,%f,%f),%f,%f",shift_fld,modulo_val,mem,bank,column,slice,any_src2_add_reg,any_dest_add_reg);
+	  }
+
+  define (instr=subi) {
+
+    width = 128;
+    fields = (opcode(0xB),immed_or_reg_src_fld(0),
+    shift_fld,modulo_val,
+	imm_dat, src_add, src2_add(0), dest_add);
+
+    dsyntax = ("sub %f %f %f(%f,%f,%f),#%f,%f(%f,%f,%f)",shift_fld,modulo_val,
+			mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+			imm_dat,
+			mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+    syntax = ("sub %p %p %f,#%f,%f",shift_fld,modulo_val,src_add,imm_dat,dest_add);
+    action = { };
+  }
+
+  define (instr=sub_m_i_m) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateM(mem,bank,column,slice)),
+			imm_dat(imm_dat),
+			dest_add(translateM(mem1,bank1,column1,slice1)));
+	syntax = ("sub %p %p %f(%f,%f,%f),%f,%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,mem1,bank1,column1,slice1);
+  }
+
+  define (instr=sub_r_i_m) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateR(any_src_add_reg)),
+			imm_dat(imm_dat),
+			dest_add(translateM(mem1,bank1,column1,slice1)));
+	syntax = ("sub %p %p %f,%f,%f(%f,%f,%f)",shift_fld,modulo_val,any_src_add_reg,imm_dat,mem1,bank1,column1,slice1);
+  }
+
+  define (instr=sub_r_i_r) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateR(any_src_add_reg)),
+			imm_dat(imm_dat),
+			dest_add(translateR(any_dest_add_reg)));
+	syntax = ("sub %p %p %f,%f,%f",shift_fld,modulo_val,any_src_add_reg,imm_dat,any_dest_add_reg);
+  }
+
+  define (instr=sub_m_i_r) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateM(mem,bank,column,slice)),
+			imm_dat(imm_dat),
+			dest_add(translateR(any_dest_add_reg)));
+	syntax = ("sub %p %p %f(%f,%f,%f),%f,%f",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,any_dest_add_reg);
+  }
+
+  define (instr=sub_m_i_m_X) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateM(mem,bank,column,slice)),
+			imm_dat(imm_dat),
+			dest_add(translateM(mem1,bank1,column1,slice1)));
+	syntax = ("sub %p %p %f(%f,%f,%f),#%f,%f(%f,%f,%f)",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,mem1,bank1,column1,slice1);
+  }
+
+  define (instr=sub_r_i_m_X) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateR(any_src_add_reg)),
+			imm_dat(imm_dat),
+			dest_add(translateM(mem1,bank1,column1,slice1)));
+	syntax = ("sub %p %p %f,#%f,%f(%f,%f,%f)",shift_fld,modulo_val,any_src_add_reg,imm_dat,mem1,bank1,column1,slice1);
+  }
+
+  define (instr=sub_r_i_r_X) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateR(any_src_add_reg)),
+			imm_dat(imm_dat),
+			dest_add(translateR(any_dest_add_reg)));
+	syntax = ("sub %p %p %f,#%f,%f",shift_fld,modulo_val,any_src_add_reg,imm_dat,any_dest_add_reg);
+  }
+
+  define (instr=sub_m_i_r_X) {
+	alias = subi(shift_fld(shift_fld), modulo_val(modulo_val),
+			src_add(translateM(mem,bank,column,slice)),
+			imm_dat(imm_dat),
+			dest_add(translateR(any_dest_add_reg)));
+	syntax = ("sub %p %p %f(%f,%f,%f),#%f,%f",shift_fld,modulo_val,mem,bank,column,slice,imm_dat,any_dest_add_reg);
+  }
+
+/*
+** cmp	        src src_add, src2_add, dest_add 
+*/
+
+  define (instr=cmp) {
+    width = 128;
+    fields = (opcode(0xC),immed_or_reg_src_fld(1),imm_dat(0),src_add,src2_add,dest_add);
+
+	dsyntax = ("cmp %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",
+			mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+			mem2(decode_mem(src2_add)),bank2(decode_bank(src2_add)),column2(decode_column(src2_add)),slice2(decode_slice(src2_add)),
+			mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+    syntax = ("cmp %f,%f,%f",src_add,src2_add,dest_add);
+    action = { };
+  }
+
+	  define (instr=cmp_m_r_m) {
+		alias = cmp(src_add(translateM(mem,bank,column,slice)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("cmp %f(%f,%f,%f),%f,%f(%f,%f,%f)",mem,bank,column,slice,any_src2_add_reg,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=cmp_m_m_m) {
+		alias = cmp(src_add(translateM(mem,bank,column,slice)),
+				src2_add(is_addr_wr_spr(translateM(mem2,bank2,column2,slice2))),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("cmp %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",mem,bank,column,slice,mem2,bank2,column2,slice2,mem1,bank1,column1,slice1);
+	  }
+
+	  define (instr=cmp_r_r_m) {
+		alias = cmp(src_add(translateR(any_src_add_reg)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("cmp %f,%f,%f(%f,%f,%f)",any_src_add_reg,any_src2_add_reg,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=cmp_r_r_r) {
+		alias = cmp(src_add(translateR(any_src_add_reg)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("cmp %f,%f,%f",any_src_add_reg,any_src2_add_reg,any_dest_add_reg);
+	  }
+	
+	  define (instr=cmp_m_r_r) {
+		alias = cmp(src_add(translateM(mem,bank,column,slice)),
+				src2_add(translateR(any_src2_add_reg)),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("cmp %f(%f,%f,%f),%f,%f",mem,bank,column,slice,any_src2_add_reg,any_dest_add_reg);
+	  }
+
+  define (instr=cmpi) {
+    width = 128;
+    fields = (opcode(0xC),immed_or_reg_src_fld(0),imm_dat,src_add,src2_add(0),dest_add);
+
+	dsyntax = ("cmp %f(%f,%f,%f),#%f,%f(%f,%f,%f)",
+			mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+			imm_dat,
+			mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+    syntax = ("cmp %f,#%f,%f",src_add,imm_dat,dest_add);
+    action = { };
+  }
+
+	  define (instr=cmp_m_i_m) {
+		alias = cmpi(src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("cmp %f(%f,%f,%f),%f,%f(%f,%f,%f)",mem,bank,column,slice,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=cmp_r_i_m) {
+		alias = cmpi(src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("cmp %f,%f,%f(%f,%f,%f)",any_src_add_reg,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=cmp_r_i_r) {
+		alias = cmpi(src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("cmp %f,%f,%f",any_src_add_reg,imm_dat,any_dest_add_reg);
+	  }
+	
+	  define (instr=cmp_m_i_r) {
+		alias = cmpi(src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("cmp %f(%f,%f,%f),%f,%f",mem,bank,column,slice,imm_dat,any_dest_add_reg);
+	  }
+
+	  define (instr=cmp_m_i_m_X) {
+		alias = cmpi(src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("cmp %f(%f,%f,%f),#%f,%f(%f,%f,%f)",mem,bank,column,slice,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=cmp_r_i_m_X) {
+		alias = cmpi(src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+		syntax = ("cmp %f,#%f,%f(%f,%f,%f)",any_src_add_reg,imm_dat,mem1,bank1,column1,slice1);
+	  }
+	
+	  define (instr=cmp_r_i_r_X) {
+		alias = cmpi(src_add(translateR(any_src_add_reg)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("cmp %f,#%f,%f",any_src_add_reg,imm_dat,any_dest_add_reg);
+	  }
+	
+	  define (instr=cmp_m_i_r_X) {
+		alias = cmpi(src_add(translateM(mem,bank,column,slice)),
+				imm_dat(imm_dat),
+				dest_add(translateR(any_dest_add_reg)));
+		syntax = ("cmp %f(%f,%f,%f),#%f,%f",mem,bank,column,slice,imm_dat,any_dest_add_reg);
+	  }
+
+/** sel	re_im wr dest_add src1_add, src2_add, src3_add  */
+
+  define (instrfield=sel_re_im) {
+	// SEL
+    bits = 121;
+    enumerated = (".im", ".re");
+  }
+
+  define (instrfield=sel_wr) {
+	// SEL
+    bits = (85,80);
+  }
+
+  define (instrfield=sel_wr_reg) {
+	// SEL
+    width =  6;
+	pseudo = true;
+    enumerated = (
+#include "sptregs.h"
+    );
+  }
+
+  define (instrfield=sel_src3_add) {
+	// SEL
+    bits = (47,32);
+  }
+
+  define (instrfield=sel_src3_add_reg) {
+	// SEL
+    width = 6;
+    pseudo = true;
+    enumerated = (
+#include "wr3"
+    );
+  }
+
+  define (instrfield=sel_src1_add) {
+	// SEL
+    bits = (31,16);
+  }
+
+  define (instr=selMM) {
+    width = 128;
+    fields = (opcode(0xE),sel_re_im,sel_wr,
+        dest_add,
+        src2_add,
+        sel_src3_add,
+        sel_src1_add);
+
+	dsyntax = ("sel %f %f %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",sel_re_im,sel_wr_reg(sel_wr),
+			mem(decode_mem(dest_add)),bank(decode_bank(dest_add)),column(decode_column(dest_add)),slice(decode_slice(dest_add)),
+			mem1(decode_mem(sel_src1_add)),bank1(decode_bank(sel_src1_add)),column1(decode_column(sel_src1_add)),slice1(decode_slice(sel_src1_add)),
+			mem2(decode_mem(src2_add)),bank2(decode_bank(src2_add)),column2(decode_column(src2_add)),slice2(decode_slice(src2_add)),
+			mem3(decode_mem(sel_src3_add)),bank3(decode_bank(sel_src3_add)),column3(decode_column(sel_src3_add)),slice3(decode_slice(sel_src3_add)));
+    syntax = ("sel %p %f %f,%f,%f,%f",sel_re_im,sel_wr,dest_add,sel_src1_add,src2_add,sel_src3_add);
+    action = { };
+  }
+
+  define (instr=sel_r_r_r_r) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateR(dest_add_reg)),
+			sel_src1_add(translateR(src_add_reg)),
+			src2_add(translateR(src2_add_reg)),
+			sel_src3_add(translateR(sel_src3_add_reg)));
+	syntax = ("sel %p %p %f,%f,%f,%f",sel_re_im,sel_wr_reg,dest_add_reg,src_add_reg,src2_add_reg,sel_src3_add_reg);
+  }
+
+  define (instr=sel_r_r_m_r) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateR(dest_add_reg)),
+			sel_src1_add(translateR(src2_add_reg)),
+			src2_add(translateM(mem1,bank1,column1,slice1)),
+			sel_src3_add(translateR(sel_src3_add_reg)));
+		syntax = ("sel %p %p %f,%f,%f(%f,%f,%f),%f",
+			sel_re_im,sel_wr_reg,
+			dest_add_reg,
+			src2_add_reg,
+			mem1,bank1,column1,slice1,
+			sel_src3_add_reg);
+  }
+
+  define (instr=sel_r_m_r_r) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateR(dest_add_reg)),
+				sel_src1_add(translateM(mem1,bank1,column1,slice1)),
+				src2_add(translateR(src2_add_reg)),
+				sel_src3_add(translateR(sel_src3_add_reg)));
+			syntax = ("sel %p %p %f,%f(%f,%f,%f),%f,%f",
+				sel_re_im,sel_wr_reg,
+				dest_add_reg,
+				mem1,bank1,column1,slice1,
+				src2_add_reg,
+				sel_src3_add_reg);
+  }
+
+  define (instr=sel_r_m_m_r) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateR(dest_add_reg)),
+				sel_src1_add(translateM(mem,bank,column,slice)),
+				src2_add(translateM(mem1,bank1,column1,slice1)),
+				sel_src3_add(translateR(sel_src3_add_reg)));
+			syntax = ("sel %p %p %f,%f(%f,%f,%f),%f(%f,%f,%f),%f",
+				sel_re_im,sel_wr_reg,
+				dest_add_reg,
+				mem,bank,column,slice,
+				mem1,bank1,column1,slice1,
+				sel_src3_add_reg);
+  }
+
+  define (instr=sel_m_r_r_r) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateM(mem,bank,column,slice)),
+				sel_src1_add(translateR(src_add_reg)),
+				src2_add(translateR(src2_add_reg)),
+				sel_src3_add(translateR(sel_src3_add_reg)));
+		syntax = ("sel %p %p %f(%f,%f,%f),%f,%f,%f",
+				sel_re_im,sel_wr_reg,
+				mem,bank,column,slice,
+				src_add_reg,
+				src2_add_reg,
+				sel_src3_add_reg);
+  }
+
+  define (instr=sel_m_r_m_r) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateM(mem,bank,column,slice)),
+			sel_src1_add(translateR(src2_add_reg)),
+			src2_add(translateM(mem1,bank1,column1,slice1)),
+			sel_src3_add(translateR(sel_src3_add_reg)));
+	syntax = ("sel %p %p %f(%f,%f,%f),%f,%f(%f,%f,%f),%f",
+			sel_re_im,sel_wr_reg,
+			mem,bank,column,slice,
+			src2_add_reg,
+			mem1,bank1,column1,slice1,
+			sel_src3_add_reg);
+  }
+
+  define (instr=sel_m_m_r_r) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateM(mem,bank,column,slice)),
+				sel_src1_add(translateM(mem1,bank1,column1,slice1)),
+				src2_add(translateR(src2_add_reg)),
+				sel_src3_add(translateR(sel_src3_add_reg)));
+		syntax = ("sel %p %p %f(%f,%f,%f),%f(%f,%f,%f),%f,%f",sel_re_im,sel_wr_reg,
+				mem,bank,column,slice,
+				mem1,bank1,column1,slice1,
+				src2_add_reg,
+				sel_src3_add_reg);
+  }
+
+  define (instr=sel_m_m_m_r) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateM(mem,bank,column,slice)),
+			sel_src1_add(translateM(mem1,bank1,column1,slice1)),
+			src2_add(translateM(mem2,bank2,column2,slice2)),
+			sel_src3_add(translateR(sel_src3_add_reg)));
+	syntax = ("sel %p %p %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f),%f",sel_re_im,sel_wr_reg,
+			mem,bank,column,slice,
+			mem1,bank1,column1,slice1,
+			mem2,bank2,column2,slice2,
+			sel_src3_add_reg);
+  }
+
+  define (instr=sel_r_r_r_m) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateR(dest_add_reg)),
+			sel_src1_add(translateR(src_add_reg)),
+			src2_add(translateR(src2_add_reg)),
+			sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+	syntax = ("sel %p %p %f,%f,%f,%f(%f,%f,%f)",sel_re_im,sel_wr_reg,
+			dest_add_reg,
+			src_add_reg,
+			src2_add_reg,
+			mem3,bank3,column3,slice3);
+  }
+
+  define (instr=sel_r_r_m_m) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateR(dest_add_reg)),
+			sel_src1_add(translateR(src2_add_reg)),
+			src2_add(translateM(mem1,bank1,column1,slice1)),
+			sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+		syntax = ("sel %p %p %f,%f,%f(%f,%f,%f),%f(%f,%f,%f)",
+			sel_re_im,sel_wr_reg,
+			dest_add_reg,
+			src2_add_reg,
+			mem1,bank1,column1,slice1,
+			mem3,bank3,column3,slice3);
+  }
+
+  define (instr=sel_r_m_r_m) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateR(dest_add_reg)),
+				sel_src1_add(translateM(mem1,bank1,column1,slice1)),
+				src2_add(translateR(src2_add_reg)),
+				sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+			syntax = ("sel %p %p %f,%f(%f,%f,%f),%f,%f(%f,%f,%f)",
+				sel_re_im,sel_wr_reg,
+				dest_add_reg,
+				mem1,bank1,column1,slice1,
+				src2_add_reg,
+				mem3,bank3,column3,slice3);
+  }
+
+  define (instr=sel_r_m_m_m) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateR(dest_add_reg)),
+				sel_src1_add(translateM(mem,bank,column,slice)),
+				src2_add(translateM(mem1,bank1,column1,slice1)),
+				sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+			syntax = ("sel %p %p %f,%f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",
+				sel_re_im,sel_wr_reg,
+				dest_add_reg,
+				mem,bank,column,slice,
+				mem1,bank1,column1,slice1,
+				mem3,bank3,column3,slice3);
+  }
+
+  define (instr=sel_m_r_r_m) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateM(mem,bank,column,slice)),
+				sel_src1_add(translateR(src_add_reg)),
+				src2_add(translateR(src2_add_reg)),
+				sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+		syntax = ("sel %p %p %f(%f,%f,%f),%f,%f,%f(%f,%f,%f)",
+				sel_re_im,sel_wr_reg,
+				mem,bank,column,slice,
+				src_add_reg,
+				src2_add_reg,
+				mem3,bank3,column3,slice3);
+  }
+
+  define (instr=sel_m_r_m_m) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateM(mem,bank,column,slice)),
+			sel_src1_add(translateR(src2_add_reg)),
+			src2_add(translateM(mem1,bank1,column1,slice1)),
+			sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+	syntax = ("sel %p %p %f(%f,%f,%f),%f,%f(%f,%f,%f),%f(%f,%f,%f)",
+			sel_re_im,sel_wr_reg,
+			mem,bank,column,slice,
+			src2_add_reg,
+			mem1,bank1,column1,slice1,
+			mem3,bank3,column3,slice3);
+  }
+
+  define (instr=sel_m_m_r_m) {
+		alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+				dest_add(translateM(mem,bank,column,slice)),
+				sel_src1_add(translateM(mem1,bank1,column1,slice1)),
+				src2_add(translateR(src2_add_reg)),
+				sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+		syntax = ("sel %p %p %f(%f,%f,%f),%f(%f,%f,%f),%f,%f(%f,%f,%f)",sel_re_im,sel_wr_reg,
+				mem,bank,column,slice,
+				mem1,bank1,column1,slice1,
+				src2_add_reg,
+				mem3,bank3,column3,slice3);
+  }
+
+  define (instr=sel_m_m_m_m) {
+	alias = selMM(sel_re_im(sel_re_im), sel_wr(sel_wr_reg),
+			dest_add(translateM(mem,bank,column,slice)),
+			sel_src1_add(translateM(mem1,bank1,column1,slice1)),
+			src2_add(translateM(mem2,bank2,column2,slice2)),
+			sel_src3_add(translateM(mem3,bank3,column3,slice3)));
+	syntax = ("sel %p %p %f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f),%f(%f,%f,%f)",sel_re_im,sel_wr_reg,
+			mem,bank,column,slice,
+			mem1,bank1,column1,slice1,
+			mem2,bank2,column2,slice2,
+			mem3,bank3,column3,slice3);
+  }
+
+}

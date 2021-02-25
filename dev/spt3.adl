@@ -1,0 +1,26 @@
+#include "spt3_addr.adl"
+#include "spt3_alu.adl"
+#include "spt3_cmds.adl"
+#include "spt3_fft.adl"
+#include "spt3_fftb.adl"
+#include "spt3_hist.adl"
+#include "spt3_sort.adl"
+#include "spt3_sortb.adl"
+#include "spt3_vmt.adl"
+#include "spt3_copy.adl"
+#include "spt3_copyb.adl"
+
+define (core=spt3) {
+
+  archs = (spt3_addressing, spt3_alu, spt3_cmds,spt3_fft,spt3_fftb,spt3_hist,spt3_sort,spt3_sortb,spt3_vmt,spt3_copy,spt3_copyb);
+  instr_endianness = little;
+  data_endianness = little;
+  bit_endianness = little;
+  
+  define (assembler) {
+	  comments=(";");
+	  line_comments=(";","#");
+	  symbol_chars = ("#");
+	  arg_separators=(",");
+  }
+}
