@@ -1,0 +1,179 @@
+define (arch=spt_hist) {
+
+  define (instrfield=in_dattyp2) {
+	// COPY, MAXS, SORT, HIST
+	bits = (121,120);
+	enumerated = (".real",".cmplx",".log2");
+	value = ".real";
+  }
+
+  define (instrfield=pre_proc) {
+	// COPY, HIST, MAXS, HIST
+	bits = (119,118);
+	enumerated = (".no_preproc", ".abs_proc", ".mag_proc");
+  }
+
+  define (instrfield=hist_mode) {
+	// HIST
+	bits = (117,116);
+	enumerated = (".read_store", ".read", ".acc", ".store");
+  }
+
+  define (instrfield=bin_sz) {
+	// HIST
+	bits = (115,114);
+	enumerated = (".16_24bins", ".32bins", ".64bins");
+  }
+
+  define (instrfield=pack_en) {
+	// HIST
+	bits = (111,110);
+	enumerated = (".no_pack_real", ".no_pack_im", ".pack");
+  }
+
+  define (instrfield=threshold) {
+	// HIST
+	bits = (15,10);
+  }
+
+  define (instrfield=dat_sz) {
+	// HIST
+	bits = 0;
+	enumerated = (".16bits", ".24bits");
+  }
+
+  define (instrfield=preload) {
+	// HIST
+	bits = 113;
+	enumerated = (".no_preload", ".preload");
+  }
+
+
+// hist  in_dattyp preproc hist_mode bin_sz preload pack_en vec_sz src_add, dest_add, src_add_inc, dest_add_inc, threshold, dat_sz
+  define (instr = hist) {
+
+	width = 128;
+	fields = (
+		/* 127:112 */ opcode(0x24), in_dattyp2, pre_proc, hist_mode, bin_sz, preload,
+		/* 111: 96 */ pack_en, ima_fld(0), vec_sz,
+		/*  95: 80 */ src_add,
+		/*  79: 64 */ dest_add,
+		/*  63: 48 */ /* reserved */
+		/*  47: 32 */ src_add_inc, dest_add_inc,
+		/*  31: 16 */ /* reserved */
+		/*  15:  0 */ threshold, dat_sz
+	);
+
+	/*                1  2  3  4  5  6   7   8          9         10  11  12  13 */
+	dsyntax = ("hist %f %f %f %f %f %f, %f, %f%f_%f%f, %f%f_%f%f, %f, %f, %f, %f",
+		/*  1 */ in_dattyp2,
+		/*  2 */ pre_proc,
+		/*  3 */ hist_mode,
+		/*  4 */ bin_sz,
+		/*  5 */ preload,
+		/*  6 */ pack_en,
+		/*  7 */ vec_sz,
+		/*  8 */ DS_MEM1(src_add),
+		/*  9 */ DS_MEM(dest_add),
+		/* 10 */ src_add_inc,
+		/* 11 */ dest_add_inc,
+		/* 12 */ threshold,
+		/* 13 */ dat_sz
+	);
+
+	/*               1  2  3  4  5  6   7   8   9  10  11  12  13 */
+	syntax = ("hist %f %f %f %f %f %f, %f, %f, %f, %f, %f, %f, %f",
+		/*  1 */ in_dattyp2,
+		/*  2 */ pre_proc,
+		/*  3 */ hist_mode,
+		/*  4 */ bin_sz,
+		/*  5 */ preload,
+		/*  6 */ pack_en,
+		/*  7 */ vec_sz,
+		/*  8 */ src_add,
+		/*  9 */ dest_add,
+		/* 10 */ src_add_inc,
+		/* 11 */ dest_add_inc,
+		/* 12 */ threshold,
+		/* 13 */ dat_sz
+	);
+
+	asm_rules = (
+		R_hist_vec_sz,
+		R_src_oram_aligned,
+		R_dest_oram_aligned
+	);
+
+	action = { };
+  }
+
+// hist.ind  in_dattyp preproc hist_mode bin_sz preload pack_en vec_sz src_add,           src_add_inc, dest_add_inc, threshold, dat_sz
+  define (instr = hist_ind) {
+
+	width = 128;
+	fields = (
+		/* 127:112 */ opcode(0x24), in_dattyp2, pre_proc, hist_mode, bin_sz, preload,
+		/* 111: 96 */ pack_en, ima_fld(1), vec_sz,
+		/*  95: 80 */ src_add,
+		/*  79: 64 */ dest_add(0),
+		/*  63: 48 */ /* reserved */
+		/*  47: 32 */ src_add_inc, dest_add_inc,
+		/*  31: 16 */ /* reserved */
+		/*  15:  0 */ threshold, dat_sz
+	);
+
+	/*                    1  2  3  4  5  6   7   8   9  10  11  12 */
+	dsyntax = ("hist.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f, %f",
+		/*  1 */ in_dattyp2,
+		/*  2 */ pre_proc,
+		/*  3 */ hist_mode,
+		/*  4 */ bin_sz,
+		/*  5 */ preload,
+		/*  6 */ pack_en,
+		/*  7 */ vec_sz,
+		/*  8 */ ds_src_ind(src_add),
+		/*  9 */ src_add_inc,
+		/* 10 */ dest_add_inc,
+		/* 11 */ threshold,
+		/* 12 */ dat_sz
+	);
+
+	/*                   1  2  3  4  5  6   7   8   9  10  11  12 */
+	syntax = ("hist.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f, %f",
+		/*  1 */ in_dattyp2,
+		/*  2 */ pre_proc,
+		/*  3 */ hist_mode,
+		/*  4 */ bin_sz,
+		/*  5 */ preload,
+		/*  6 */ pack_en,
+		/*  7 */ vec_sz,
+		/*  8 */ src_add,
+		/*  9 */ src_add_inc,
+		/* 10 */ dest_add_inc,
+		/* 11 */ threshold,
+		/* 12 */ dat_sz
+	);
+
+	asm_rules = (
+		R_hist_vec_sz,
+		R_src_ind
+	);
+
+	action = { };
+  }
+
+
+  define (assembler) {
+
+    // hist VEC_SZ must be a multiple of 8
+    define (rule=R_hist_vec_sz) {
+      action = func(InstrInfo ii) {
+        // vector size is dont care in store only mode.
+        if ((hist_mode != 3) && (vec_sz % 8 != 0)) {
+          error(0, "illegal operand vec_sz : ", vec_sz, ", expected multiple of 8.");
+        }
+      };
+    }
+  };
+
+}
