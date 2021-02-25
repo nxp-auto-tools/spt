@@ -1,0 +1,2 @@
+for f in *.spt2 ; do ../as-spt2-GM -I inc  $f -o $f.o > $f.log 2>&1 ; done
+for f in *.spt2 ; do ../objdump-spt2-GM -d $f.o > $f.list 2>&1 ; done

@@ -1,0 +1,3682 @@
+//
+// The SPT command-sequencer.  This simply defines instructions for decoding
+// purposes.  All of the actual instruction semantics are implemented using an
+// external object of type SptBehavior (interface declared in SptBehavior.h).
+//
+
+// This declares the interface class which must implement the SPT behavior.
+//#include "SptBehavior.h"
+
+define (arch=SPT) {
+
+  define (regfile=R) {
+    size = 40;
+    width = 32;
+    prefix = r;
+  }
+
+  attrs = (nia,cia);
+
+  define (reg=PC) {
+    attrs = (nia,cia);
+  }
+
+  define (instrfield=opcode) {
+    bits = (127,122);
+  }
+
+  define (instrfield=immed_or_reg_src_fld) {
+	// SET, ADD
+    bits = 121;
+    enumerated = (".immed",("",".reg"));
+  }
+
+  define (instrfield=ima_fld) {
+	// SET, GET, WIN, RDX4, RDX2, FIR, COPY
+    bits = 109;
+    enumerated = (".imm",".ind");
+    value = ".imm";
+  }
+
+  define (instrfield=src_add) {
+    bits = (95, 80);
+  }
+
+  define (instrfield=dest_add) {
+    bits = (79, 64);
+  }
+
+  define (instrfield=src2_add) {
+    bits = (63, 48);
+  }
+
+  define (instrfield=imm_dat) {
+	// SET, ADD
+    bits = (47,0);
+  }
+
+  define (instrfield=shift_fld) {
+	// ADD
+    bits = 120;
+    enumerated = (".noshift",(".shift",""));
+    value = "";
+  }
+
+  define (instrfield=modulo_val) {
+	// ADD
+    bits = (100,96);
+    enumerated = (
+      ("", ".mod0"),  ".mod1",  ".mod2",  ".mod3",  ".mod4",  ".mod5",
+      ".mod6",  ".mod7",  ".mod8",  ".mod9",  ".mod10", ".mod11",
+      ".mod12", ".mod13", ".mod14", ".mod15", ".mod16", ".mod17",
+      ".mod18", ".mod19", ".mod20", ".mod21", ".mod22", ".mod23",
+      ".mod24");
+    value = "";
+  }
+
+ define (instrfield=extra_val) {
+	// VMT
+    width = 16;
+    pseudo = true;
+    disassemble = false;
+  }
+
+ define (instrfield=extra_val2) {
+	// VMT
+    width = 16;
+    pseudo = true;
+    disassemble = false;
+  }
+
+  define (instrfield=ev_lvl) {
+	// EVT
+    bits = 121;
+    enumerated = (".low",".high");
+    value = ".low";
+  }
+
+  define (instrfield=evt_ev) {
+	// EVT
+    bits = (114,112);
+    enumerated = ((".lsb",".bit0"),".bit1",".bit2",".bit3",".bit4",".bit5",".bit6",(".msb",".bit7"));
+  }
+
+  define (instrfield=win_type) {
+	// WIN, FIR
+    bits = (120,119);
+    enumerated = (reserved,".cmplx_win",".real_win_im_tram",".real_win_real_tram");
+  }
+
+  define (instrfield=win_type_rdx) {
+	// RDX4, RDX2
+    bits = (120,119);
+    enumerated = (".no_win",".cmplx_win",".real_win_im_tram",".real_win_real_tram");
+  }
+
+  define (instrfield=in_dattyp) {
+	// WIN, RDX4, RDX2, FIR, SCP
+    bits = (121);
+    enumerated = (".real",".cmplx");
+    value = ".real";
+  }
+
+  define (instrfield=in_dattyp2) {
+	// COPY, MAXS, SORT
+    bits = (121,120);
+    enumerated = (".real",".cmplx",".log2");
+    value = ".real";
+  }
+
+  define (instrfield=vec_sz) {
+	// WIN, RDX4, FIR
+    bits = (108,96);
+    display = dec;
+  }
+
+  define (instrfield=mult_coef_add) {
+	// WIN, RDX4, RDX2
+    bits = (63,48);
+  }
+
+  define (instrfield=src_add_inc) {
+	// WIN, RDX4, RDX2, FIR, COPY
+    bits = (47,40);
+  }
+
+  define (instrfield=dest_add_inc) {
+	// WIN, RDX4, RDX2, FIR, COPY
+    bits = (39,32);
+  }
+
+  define (instrfield=mca_mod) {
+	// WIN, RDX4
+    bits = (31,28);
+    enumerated = (
+      ("", ".mod0"), ".mod2", ".mod4", ".mod8",
+      ".mod16",  ".mod32",  ".mod64",  ".mod128",
+      ".mod256", ".mod512", reserved, reserved,
+      reserved, reserved, reserved, reserved);
+    value = "";
+  }
+
+  define (instrfield=mca_inc) {
+	// WIN, RDX4
+    bits = (24,16);
+  }
+
+  define (instrfield=mult_mod) {
+	// WIN, RDX4
+    bits = (9,8);
+    enumerated = (".immed",".const",".caddr", reserved);
+  }
+
+  define (instrfield=shft_val) {
+	// WIN, RDX4, FIR
+    bits = (6,4);
+    enumerated = (".nosft",".shift1",".shift2",".shift3", ".shift4",".shift8",reserved,reserved);
+  }
+
+  define (instrfield=cc_im) {
+	// WIN
+    bits = (63,48);
+  }
+
+   define (instrfield=cc_re) {
+	// WIN
+    bits = (31,16);
+  }
+
+  define (instrfield=fft_rnd) {
+	// RDX4
+    bits = (118,116);
+    enumerated = (".round0",".round1",".round2",".round3",".round4",".round5");
+    display = dec;
+  }
+
+  define (instrfield=fft_rnd_rdx2) {
+	// RDX2
+    bits = (118,116);
+    enumerated = (reserved,".round1",".round2",".round3",".round4",".round5");
+    display = dec;
+  }
+
+  define (instrfield=quad_ext) {
+	// RDX4, RDX2
+    bits = 112;
+    enumerated = (".noqext",".qext");
+    value = ".noqext";
+  }
+
+  define (instrfield=real_fft) {
+	  // RDX2
+    bits = 115;
+    enumerated = (".nosplit",".opsplit");
+    value = ".nosplit";
+  }
+
+  define (instrfield=tw_ovs) {
+	// RDX2
+    bits = (3,0);
+    enumerated = (".noovs",".ovs2",".ovs4",".ovs8",".ovs16",".ovs32",".ovs64",".ovs128",".ovs256",".ovs512");
+    value = ".noovs";
+  }
+
+  define (instrfield=init) {
+	// FIR
+    bits = 116;
+    enumerated = (".zero_init",".const_init");
+    value = ".zero_init";
+  }
+
+  define (instrfield=no_of_taps) {
+	// FIR
+    bits = (115,112);
+    display = dec;
+  }
+
+  define (instrfield=tap_coef_mode) {
+	// 2 upper bits
+  bits = (63, 62);
+  value = 1;
+  }
+
+  define (instrfield=tap_coef_bank) {
+    bits = (61,60);
+  }
+
+  define (instrfield=tap_coef_col) {
+    bits = (59,51);
+    display=dec;
+  }
+
+  define (instrfield=tap_coef_slice) {
+    bits = (50,48);
+    display=dec;
+  }
+
+  define (instrfield=tap_coef_add) {
+	// FIR
+    bits = (63,48);
+  }
+
+  define (instrfield=cp_type) {
+	// COPY
+    bits = (116,112);
+    enumerated = (".simple_copy",".threshold_ge",".threshold_lt",".transpose_copy",
+                  ".copy_real_pack",".copy_imag_pack",".copy_unpack",".partial_copy_real",
+                  ".partial_copy_imag",".partial_copy_r2i",".partial_copy_i2r",
+                  ".copy_clear",".copy_shift", ".transpose_fwd_x8", ".transpose_bck_x8",
+                  ".transpose_fwd_x4", ".transpose_bck_x4", ".threshold_gt", ".threshold_ge_step",
+                  ".threshold_gt_step", ".threshold_lt_step", ".scat_gath");
+    value = ".simple_copy";
+  }
+
+  define (instrfield=rst_acc) {
+	// COPY
+    bits = 117;
+    enumerated = (".no_rst",".rst_wr");
+  }
+
+  define (instrfield=rst_n_keep) {
+	// COPY
+    bits = 111;
+    enumerated = (".keep_orig",".reset_values");
+    value = ".keep_orig";
+  }
+
+  define (instrfield=blk_src_inc) {
+	// COPY
+    bits = (63,56);
+    display = dec;
+  }
+
+  define (instrfield=blk_dest_inc) {
+	// COPY
+    bits = (54,48);
+    display = dec;
+  }
+
+  define (instrfield=shft_ofst) {
+	// WIN, RDX4, IRDX4
+    bits = (27,25);
+    enumerated = (".bits_0_5", ".bits_6_11", ".bits_12_17", ".bits_18_23",
+	".bits_24_29", ".bits_30_35", ".bits_36_41", ".bits_42_47");
+  }
+
+  define (instrfield=shft_wr) {
+	// WIN, RDX4, IRDX4
+    bits = (15,10);
+  }
+
+  define (reloc=R_ADDR32) {
+	// PDMA relocation
+	value=5;
+	pcrel=false;
+	instrfield = sysram_mem_start_addr;
+  }
+
+  define (reloc=R_AARCH64_ABS32) {
+	// PDMA relocation
+	value=258;
+	pcrel=false;
+  }
+
+  define (reloc=R_ARM_ABS32) {
+	// PDMA relocation
+	value=2;
+	pcrel=false;
+  }
+
+  define (reloc=R_REL32) {
+	// JUMP relocation
+	value=4;
+	pcrel=true;
+	check_overflow =false;
+	instrfield = jmp_addr;
+        action = func (addr_t relocation,int is_linker) {
+           return (is_linker) ? relocation + 8 : relocation;
+          };
+  }
+
+  define (instrfield=adptv) {
+	// RDX2-4
+    bits = 114;
+    enumerated = (".noadptv",".adptv");
+  }
+
+  define (instrfield=adptv_shft) {
+	// RDX2-4
+    bits = 113;
+    enumerated = (".15down",".23down");
+  }
+
+  define (instrfield=adptv_ofst) {
+	// RDX2-4
+    bits = (27,25);
+    enumerated = (".bits_0_5", ".bits_6_11", ".bits_12_17", ".bits_18_23",
+	".bits_24_29", ".bits_30_35", ".bits_36_41", ".bits_42_47");
+  }
+
+  define (instrfield=adptv_wrnum) {
+	// RDX2-4
+    bits = (15,10);
+  }
+
+
+  define (instrfield=rst_acc_vmt) {
+	// VMT
+    bits = 121;
+    enumerated = (".no_rst", ".rst_sum");
+  }
+
+  define (instrfield=in_dattyp_vmt) {
+	// VMT
+    bits = 120;
+    enumerated = (".real",".cmplx");
+    value = ".real";
+  }
+
+    define (instrfield=opsq1) {
+	// VMT
+    bits = 119;
+    enumerated = (".no_sq1", ".sq1");
+  }
+
+    define (instrfield=opsq2s1) {
+	// VMT
+    bits = (118,117);
+    enumerated = (".no_sq2s1", ".abs_sq2s1", ".mag_sq2s1", ".conj_sq2s1");
+  }
+
+    define (instrfield=opsq2s2) {
+	// VMT
+    bits = (116,114);
+    enumerated = (".no_sq2s2", ".shft_sq2s2", ".wr_off_sq2s2", "imm_off_sqs2", ".vec_sq2s2");
+  }
+
+    define (instrfield=opsq2s3) {
+	// VMT
+    bits = 113;
+    enumerated = (".no_sq2s3", ".sum_sq2s3");
+  }
+
+    define (instrfield=op_pack) {
+	// VMT
+    bits = 112;
+    enumerated = (".op_off", ".op_on");
+  }
+
+    define (instrfield=ip_pack) {
+	// VMT
+    bits = (111,110);
+    enumerated = (".in_24real", ".in_24im", ".in_48");
+  }
+
+    define (instrfield=imdt_offset_val_im) {
+	// VMT
+    bits = (31,16);
+  }
+
+    define (instrfield=extra_offset_val_im) {
+	// VMT
+    bits = (15,0);
+  }
+
+    define (instrfield=pre_proc) {
+	// COPY, HIST, MAXS
+    bits = (119,118);
+    enumerated = (".no_pre", ".abs_abs_proc", ".abs_mag_proc");
+  }
+
+    define (instrfield=hist_mode) {
+	// HIST
+    bits = (117,116);
+    enumerated = (".read_store", ".read", ".acc", ".store");
+  }
+
+    define (instrfield=bin_sz) {
+	// HIST
+    bits = (115,114);
+    enumerated = (".16_24bins", ".32bins", ".64bins");
+  }
+
+    define (instrfield=pack_en) {
+	// HIST
+    bits = (111,110);
+    enumerated = (".no_pack_real", ".no_pack_im", ".pack");
+  }
+
+    define (instrfield=threshold) {
+	// HIST
+    bits = (15,10);
+  }
+
+    define (instrfield=repeat2) {
+	// RDX2, IRDX2
+    bits = (111,110);
+    enumerated = (("",".no_repeat"), ".fft8", reserved, ".fft32");
+  }
+
+    define (instrfield=repeat) {
+	// RDX4, IRDX4
+    bits = (111,110);
+    enumerated = (("",".no_repeat"), ".fft8", ".fft16", ".fft32");
+  }
+
+    define (instrfield=shft_src) {
+	// WIN
+    bits = 7;
+    enumerated = (".shft_val", ".shft_wr");
+  }
+
+    define (instrfield=dat_sz) {
+	// HIST
+    bits = 0;
+    enumerated = (".16bits", ".24bits");
+  }
+
+
+    define (instrfield=re_im) {
+	// SEL
+    bits = 121;
+    enumerated = (".im", ".re");
+  }
+
+    define (instrfield=re_im_coeff) {
+	// SCP
+    bits = (120,119);
+    enumerated = (".coef_cmplx", reserved, ".coef_im", ".coef_re");
+  }
+
+  //
+  // The external resource is just an opaque object, registered
+  // externally, which contains all of the real action code.  We just
+  // decode stuff in here and pass it to this object.
+  //
+  define (ext_resource=spt) {
+    objtype = SptBehavior;  // The class name is SptBehavior.
+    external = true;        // It is externally defined and passed in.
+  }
+
+  //
+  // Instructions
+  //
+
+  enum Option { WorkReg, Ram };
+
+  unsigned long long get_imm_dat(unsigned isreg, unsigned long long x) {
+    // return 0 if isref
+    return isreg?0:x;
+  }
+
+  unsigned get_wr(unsigned notzero,unsigned x) {
+    // Work Register have a 6 bits encoded value in 0x03F
+    return (!notzero)?0:x;
+  }
+
+  unsigned is_addr_wr(unsigned x) {
+	unsigned wr = x;
+	if (wr > 47)
+		error(0, "illegal register 0x", hex, wr);
+	return x;
+  }
+
+  unsigned is_addr_wr_spr(unsigned x) {
+	unsigned wr = x;
+	if (47 < wr && wr < 0x1000 || 0x1010 <= wr)
+		error(0, "illegal register 0x", hex, wr);
+	return x;
+  }
+
+  unsigned is_not_register(unsigned x) {
+	unsigned wr = x;
+	if (wr <= 47)
+		error(0, "illegal register 0x", hex, wr);
+	return x;
+  }
+
+  unsigned get_mode ( unsigned x ) {
+       return x >> 14 ;
+  }
+
+  unsigned is_addr_oram(unsigned x) {
+	unsigned wr = x;
+	if (get_mode(x) < 2)
+		error(0, "illegal Operand RAM 0x", hex, wr);
+	return x;
+  }
+
+  unsigned is_addr_oram_tram(unsigned x) {
+	unsigned md = get_mode(x);
+	if (md == 0)
+		error(0, "illegal Operand RAM 0x", hex, x);
+	return x;
+  }
+
+  unsigned is_addr_tram_wr(unsigned x) {
+	unsigned md = get_mode(x);
+	if (md != 0 && md != 1)
+		error(0, "illegal Twiddle RAM or register 0x", hex, x);
+	return x;
+  }
+
+  unsigned validate_addr(unsigned x, int isdest) {
+    unsigned wr;
+    switch (get_mode(x)) {
+	case 0x0: // WR
+		wr = x & 0x003F;
+                if ((x & 0x1000) == 0) {
+			if (0 <= wr && wr <= 47 && (x & 0x0FC0) == 0)
+				return x;
+		} else {
+			// account for non-writeable SPRs
+			if (0 <= wr && (isdest && wr < 12 || !isdest && wr < 16) && (x & 0x0FC0) == 0)
+				return x;
+		}
+		break;
+	case 0x1: // TRAM
+		if ((x & 0x3000) == 0)
+			return x;
+		break;
+	case 0x2: // ORAM
+	case 0x3: // ORAM
+		return x;
+		break;
+	}
+	error(0, "illegal address 0x", hex, x);
+	return x;
+  }
+
+  unsigned get_maxsN(unsigned x) {
+    // when disabled return 0 else x-1
+    if (!x)
+        return 0;
+    else
+	return x-1;
+  }
+
+  unsigned is_maxsN(unsigned x) {
+    // when disabled return 0 else 1
+    return x != 0;
+  }
+
+
+/*
+** set		src_add, dest_add
+** set.ind	src_add
+** set.immed	imm_dat, dest_add
+*/
+  define (instr=set_) {
+    """ Set workreg (full instruction) """;
+    width = 128;
+    fields = (opcode(0x1),immed_or_reg_src_fld,ima_fld,
+              src_add,
+              dest_add,
+              imm_dat);
+    action = { };
+  }
+
+  define (instr=set) {
+    """ Set workreg, [TR_col_slice, OR_bank_col_slice, WR] """;
+    width = 128;
+    alias = set_(immed_or_reg_src_fld(immed_or_reg_src_fld),ima_fld(0),
+		imm_dat(get_imm_dat(immed_or_reg_src_fld,imm_dat)),
+                src_add(is_addr_wr(get_wr(immed_or_reg_src_fld,imm_dat))),
+                dest_add(validate_addr(dest_add,1)));
+    syntax = ("%i%p %f,%f",immed_or_reg_src_fld,imm_dat,dest_add);
+  }
+
+  define (instr=set_ind) {
+    """ Set indirect via work register """;
+    width = 128;
+    alias = set_(immed_or_reg_src_fld(1),ima_fld(1),
+		src_add(is_addr_wr(src_add)),
+		imm_dat(0), dest_add(0));
+    syntax = ("set.ind %f",src_add);
+  }
+
+/*
+** get	   src_add, dest_add
+** get.ind src_add
+*/
+  define (instr=get_) {
+    """ Get workreg (full instruction) """;
+    width = 128;
+    fields = (opcode(0x2),ima_fld,src_add,dest_add);
+    action = { };
+  }
+
+   define (instr=get) {
+    """ Get workreg, [TR_col_slice, OR_bank_col_slice, WR] """;
+    width = 128;
+    alias = get_(ima_fld(0),
+                src_add(validate_addr(is_not_register(src_add),0)),
+                dest_add(is_addr_wr_spr(dest_add)));
+
+    syntax = ("%i %f,%f",src_add,dest_add);
+  }
+
+  define (instr=get_ind) {
+    """ Get indirect via work register """;
+    width = 128;
+    alias = get_(ima_fld(1),dest_add(0),src_add(is_addr_wr(src_add)));
+    syntax = ("get.ind %f",src_add);
+  }
+
+/*
+** add		src shift_fld modulo_val src_add, src2_add, dest_add 
+*/
+  define (instr=add_) {
+
+    width = 128;
+    fields = (opcode(0x3),immed_or_reg_src_fld,shift_fld,modulo_val,
+	imm_dat, src_add, src2_add, dest_add);
+
+    action = { };
+  }
+
+  define (instr=add) {
+
+    width = 128;
+    alias = add_(immed_or_reg_src_fld(immed_or_reg_src_fld),shift_fld(shift_fld),modulo_val(modulo_val),
+	imm_dat(get_imm_dat(immed_or_reg_src_fld,imm_dat)),
+	src_add(validate_addr(src_add,0)),
+        src2_add(is_addr_wr_spr(get_wr(immed_or_reg_src_fld,imm_dat))),
+        dest_add(validate_addr(dest_add,1)));
+
+    syntax = ("%i %p %p %p %f,%f,%f",immed_or_reg_src_fld,shift_fld,modulo_val,src_add,imm_dat,dest_add);
+  }
+
+/*
+** cmp	        src src_add, src2_add, dest_add 
+*/
+
+  define (instr=cmp_) {
+    width = 128;
+    fields = (opcode(0xC),immed_or_reg_src_fld,
+	imm_dat,
+	src_add,
+        src2_add,
+        dest_add);
+    action = { };
+  }
+
+  define (instr=cmp) {
+    width = 128;
+    alias = cmp_(immed_or_reg_src_fld(immed_or_reg_src_fld),
+	imm_dat(get_imm_dat(immed_or_reg_src_fld,imm_dat)),
+	src_add(validate_addr(src_add,0)),
+        src2_add(is_addr_wr_spr(get_wr(immed_or_reg_src_fld,imm_dat))),
+        dest_add(validate_addr(dest_add,1)));
+
+    syntax = ("%i%p %f,%f,%f",immed_or_reg_src_fld,src_add,imm_dat,dest_add);
+  }
+
+/*
+** dsp
+*/
+  define (instrfield=dsp_value) {
+    bits = (62,0);
+  }
+
+  define (instr=dsp) {
+
+    width = 128;
+    fields = (opcode(0x2e),dsp_value);
+
+    action = { };
+  }
+
+  define (instr=dsp_) {
+
+    width = 128;
+    alias = dsp(dsp_value(dsp_value));
+
+    syntax = ("dsp %f",dsp_value);
+  }
+
+/** stop */
+  define (instr=stop) {
+
+    width = 128;
+    fields = (opcode(0x4));
+
+    action = { };
+  }
+
+
+/** loop	lp_cnt */
+/* To provide a migration path, loop X is a loop immediate
+   and the new form with a regitser is explicit */
+  define (instrfield=immed_or_reg_src_loop) {
+	// LOOP
+    bits = 121;
+    enumerated = (("",".immed"),".reg");
+  }
+
+  define (instrfield=loop_wrnum) {
+	// LOOP
+    bits = (85, 80);
+  }
+
+  define (instrfield=loop_cnt) {
+	// LOOP
+    bits = (111,96);
+  }
+
+  unsigned get_loop_immed(unsigned mode, unsigned val) {
+  if (mode == 0) return val; else return 0;
+  }
+
+  unsigned get_loop_wr(unsigned mode, unsigned val) {
+  if (mode == 0) return 0;
+  else if (val < 48) return val;
+  else error(0, "illegal work register %d", val);
+  return 0;
+  }
+
+  define (instr=loop) {
+
+    width = 128;
+    fields = (opcode(5),immed_or_reg_src_loop,loop_cnt,loop_wrnum);
+
+    action = { };
+  }
+
+  define (instr=loop_) {
+
+    width = 128;
+    alias = loop(immed_or_reg_src_loop(immed_or_reg_src_loop),
+		loop_cnt(get_loop_immed(immed_or_reg_src_loop, loop_cnt)),
+		loop_wrnum(get_loop_wr(immed_or_reg_src_loop, loop_cnt)));
+
+    syntax = ("loop%p %f",immed_or_reg_src_loop,loop_cnt);
+  }
+
+/** next */
+  define (instr=next) {
+
+    width = 128;
+    fields = (opcode(0x6));
+
+    action = { };
+  }
+
+/** sync */
+
+  define (instrfield=sync_type) {
+    bits = (121,120);
+    enumerated = (reserved, ".pdma", ".thread", ".dsp");
+  }
+
+  define (instrfield=sync_csid) {
+    bits = (4,0);
+  }
+
+  define (instr=sync) {
+    width = 128;
+    fields = (opcode(0x7),sync_type,sync_csid);
+    action = {};
+  }
+
+  define (instr=sync_) {
+    width = 128;
+    alias = sync(sync_type(0),sync_csid(0));
+    syntax = ("sync");
+  }
+
+  define (instr=sync_dsp) {
+    width = 128;
+    alias = sync(sync_type(3),sync_csid(0));
+    syntax = ("sync.dsp");
+  }
+
+ define (instr=sync__) {
+    width = 128;
+    alias = sync(sync_type(sync_type),sync_csid(sync_csid));
+    syntax = ("sync%p %f",sync_type,sync_csid);
+  }
+
+/** wait	ev_type wait_ev */
+
+  define (instrfield=ev_type) {
+    bits = (120,119);
+    enumerated = (reserved, ".cpu", ".ext", ".int");
+  }
+
+  define (instrfield=wait_ev) {
+	// WAIT
+    bits = (102,96);
+  }
+
+  define (instr=wait) {
+    width = 128;
+    fields = (opcode(0x8),ev_type,wait_ev);
+    syntax = ("%i%p %f",ev_type,wait_ev);
+    action = {};
+  }
+
+/** evt	ev_lvl evt_ev */
+  int evt_type(int et) {
+    if (et != 1 && et != 3)
+      error(0, "illegal event type ", et);
+    return et;
+  }
+
+  define (instr=evt_) {
+    width = 128;
+    fields = (opcode(0x9),ev_type,ev_lvl,evt_ev);
+    action = {};
+  }
+
+  define (instr=evt) {
+    width = 128;
+    alias = evt_(ev_type(evt_type(ev_type)),ev_lvl(ev_lvl),evt_ev(evt_ev));
+    syntax = ("%i%p %p %f",ev_type,ev_lvl,evt_ev);
+  }
+
+/** thread	th_id */
+
+  define (instrfield=th_id) {
+    bits = (3, 0);
+  }
+
+  define (instr=thread) {
+    width = 128;
+    fields = (opcode(0x10),th_id);
+    syntax = ("%i %f",th_id);
+    action = {};
+  }
+
+/** repeat */
+
+  define (instrfield=rpt_cnt) {
+    bits = (108,96);
+  }
+
+  define (instrfield=rpt_addr_incr0) {
+    bits = (59,48);
+  }
+
+  define (instrfield=rpt_addr_incr1) {
+    bits = (43,32);
+  }
+
+  define (instrfield=rpt_addr_incr2) {
+    bits = (27,16);
+  }
+
+  define (instrfield=rpt_addr_incr3) {
+    bits = (11,0);
+  }
+
+  define (instr=repeat) {
+    width = 128;
+    fields = (opcode(0xf),rpt_cnt, rpt_addr_incr0, rpt_addr_incr1, rpt_addr_incr2, rpt_addr_incr3);
+    syntax = ("%i %f %f,%f,%f,%f",rpt_cnt, rpt_addr_incr0, rpt_addr_incr1, rpt_addr_incr2, rpt_addr_incr3);
+    action = {};
+  }
+
+/** watchdog	ev_tr mode wdog_ev count */
+
+  define (instrfield=wdog_op) {
+	// WATCHDOG OP
+    bits = (117,116);
+    enumerated = (".start",".stop",".reset",".event");
+   }
+
+  define (instrfield=wdog_ev) {
+	// WATCHDOG EV
+    bits = (114,112);
+    enumerated = (".ev0", ".ev1", ".ev2", ".ev3", ".rcs", ".rfs");
+  }
+
+  define (instrfield=wdog_cnt) {
+	// WATCHDOG CNT
+    bits = (23,0);
+  }
+
+  define (instrfield=wdog_ev_tr) {
+	// WATCHDOG
+    bits = (121,120);
+    enumerated = (".l0",".l1", ".pos", ".neg");
+    value = ".l0";
+  }
+
+  define (instr=watchdog_) {
+    width = 128;
+    fields = (opcode(0xa),wdog_ev_tr,wdog_op,wdog_ev,wdog_cnt);
+    action = {};
+  }
+
+  define (instr=watchdog) {
+    width = 128;
+    alias = watchdog_(wdog_ev_tr(wdog_ev_tr),wdog_op(wdog_op),wdog_ev(wdog_ev),wdog_cnt(wdog_cnt));
+    syntax = ("%i%p %f %f %f",wdog_ev_tr,wdog_op,wdog_ev,wdog_cnt);
+  }
+
+/*
+** sub   	src shift_fld modulo_val src_add, src2_add, dest_add
+*/ 
+  define (instr=sub_) {
+    width = 128;
+    fields = (opcode(0xB),immed_or_reg_src_fld,shift_fld,modulo_val,
+	imm_dat,
+	src_add,
+        src2_add,
+        dest_add);
+    action = {};
+  }
+
+  define (instr=sub) {
+    width = 128;
+    alias = sub_(immed_or_reg_src_fld(immed_or_reg_src_fld),shift_fld(shift_fld),modulo_val(modulo_val),
+	imm_dat(get_imm_dat(immed_or_reg_src_fld,imm_dat)),
+	src_add(validate_addr(src_add,0)),
+        src2_add(is_addr_wr_spr(get_wr(immed_or_reg_src_fld,imm_dat))),
+        dest_add(validate_addr(dest_add,1)));
+    syntax = ("%i%p %p %p %f,%f,%f",immed_or_reg_src_fld,shift_fld,modulo_val,src_add,imm_dat,dest_add);
+  }
+
+/*
+** jump.cond cond_sel cond_wr rel_off 
+** jump	                      rel_off
+*/
+
+  define (instrfield=jmp_type) {
+	// conditional jump
+    bits = 121;
+    enumerated = (("",".always"), ".cond");
+  }
+
+  define (instrfield=jmp_sel) {
+	// conditional bit selection
+    bits = (120,117);
+    enumerated = (".bit0",".bit1",".bit2",".bit3",".bit4",
+	".bit5",".bit6",".bit7",".bit8",".bit9");
+  }
+
+  define (instrfield=jmp_wr) {
+	// conditional wr
+    bits = (85,80);
+  }
+
+  define (instrfield=jmp_addr) {
+	// target address relative to @jump instr
+    bits = (63,32);
+    display=hex;
+    addr=pc;
+    is_signed = true;
+  }
+
+  define (instr=jump_) {
+    width = 128;
+    fields = (opcode(0xD),jmp_type,jmp_sel,jmp_wr,jmp_addr);
+    action = { };
+  }
+
+  define (instr=jump_alw) {
+    width = 128;
+    alias = jump_(jmp_type(0),jmp_sel(0),jmp_wr(0),jmp_addr(jmp_addr));
+    syntax = ("jumpa %f",jmp_addr);
+    dsyntax = ("jumpa 0x%f",jmp_addr);
+  }
+
+  define (instr=jump_cond) {
+    width = 128;
+    alias = jump_(jmp_type(1),jmp_sel(jmp_sel),jmp_wr(is_addr_wr(jmp_wr)),jmp_addr(jmp_addr));
+    syntax = ("jumpc %f %f %f",jmp_sel,jmp_wr,jmp_addr);
+    dsyntax = ("jumpc %f %f 0x%f",jmp_sel,jmp_wr,jmp_addr);
+  }
+
+/** sel	re_im wr dest_add src1_add, src2_add, src3_add  */
+
+  define (instrfield=sel_wr) {
+	// SEL
+  bits = (85,80);
+  }
+
+  define (instrfield=sel_src3_add) {
+	// SEL
+    bits = (47,32);
+  }
+
+  define (instrfield=sel_src1_add) {
+	// SEL
+    bits = (31,16);
+  }
+
+  define (instr=sel_) {
+    width = 128;
+    fields = (opcode(0xE),re_im,sel_wr,
+        dest_add,
+        src2_add,
+        sel_src3_add,
+        sel_src1_add);
+    action = { };
+  }
+
+  define (instr=sel) {
+    width = 128;
+    alias = sel_(re_im(re_im),sel_wr(sel_wr),
+        dest_add(validate_addr(dest_add,1)),
+        src2_add(validate_addr(src2_add,0)),
+        sel_src3_add(validate_addr(sel_src3_add,0)),
+        sel_src1_add(validate_addr(sel_src1_add,0)));
+    syntax = ("%i%p %f %f %f,%f,%f",re_im,sel_wr,dest_add,sel_src1_add,src2_add,sel_src3_add);
+  }
+
+/*
+win                           in_dattyp win_type shft_val          vec_sz src_add, dest_add,                src_add_inc, dest_add_inc, cc_im, cc_re
+win.ind                       in_dattyp win_type shft_val          vec_sz src_add,                          src_add_inc, dest_add_inc, cc_im, cc_re 
+win                 mult_mode in_dattyp win_type shft_val          vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+win.ind             mult_mode in_dattyp win_type shft_val          vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+win.shift_wr        mult_mode in_dattyp win_type shft_ofst shft_wr vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+win.ind.shift_wr    mult_mode in_dattyp win_type shft_ofst shft_wr vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+  // Win instruction with MultMode == 0.
+  define (instr=win_mm0_) {
+    width = 128;
+    fields = (opcode(0x21),in_dattyp,win_type,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	cc_im,src_add_inc,dest_add_inc,cc_re,
+	shft_wr(0),mult_mod(0),shft_src(0),shft_val);
+
+    dsyntax = ("win mult_mode=0 %p %p %p shift= %f vec_size=%f src=%f dest=%f src_inc=%f dest_inc=%f cc_im=%f cc_re=%f",
+	ima_fld, in_dattyp, win_type, shft_val, vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc,
+	cc_im,cc_re);
+
+    action = { };
+  }
+
+  define (instr=win_mm0) {
+    width = 128;
+    alias = win_mm0_(in_dattyp(in_dattyp),ima_fld(0),
+	win_type(win_type),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	cc_im(cc_im), cc_re(cc_re),
+	src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+	shft_val(shft_val));
+
+    syntax = ("win %p %p %f %f %f,%f,%f,%f,%f,%f",
+	in_dattyp, win_type, shft_val, vec_sz,
+	src_add, dest_add,
+	src_add_inc, dest_add_inc,
+	cc_im,cc_re);
+ }
+
+  define (instr=win_mm0_ind) {
+    width = 128;
+    alias = win_mm0_(in_dattyp(in_dattyp),
+	ima_fld(1),win_type(win_type),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	cc_im(cc_im), cc_re(cc_re),
+	src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+	shft_val(shft_val));
+
+    syntax = ("win.ind %p %p %f %f %f,%f,%f,%f,%f",
+	in_dattyp, win_type, shft_val, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc,
+	cc_im,cc_re);
+ }
+
+   // Win instruction with MultMode != 0.
+  define (instr=win_mmn0_) {
+    width = 128;
+    fields = (opcode(0x21), in_dattyp, win_type, ima_fld, vec_sz,
+	src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc, dest_add_inc,
+	mca_mod, shft_ofst, mca_inc,
+	shft_wr, mult_mod, shft_src, shft_val);
+
+    dsyntax = ("win mult_mode=%f %f %f %f shft=%f %f %f %f vec_size=%f src=%f dest=%f mult_coef=%f mca_mod=%f mca_inc=%f src_inc=%f dest_inc=%f",
+	mult_mod, ima_fld, in_dattyp, win_type,
+	shft_src, shft_val, shft_wr, shft_ofst, vec_sz,
+	src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc, dest_add_inc,
+	mca_mod, mca_inc);
+
+    action = { };
+  }
+
+  // Win instruction with MultMode != 0.
+  define (instr=win_mmn0) {
+    width = 128;
+    alias = win_mmn0_(in_dattyp(in_dattyp),
+	ima_fld(0),win_type(win_type),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),shft_ofst(0),mca_inc(mca_inc),
+	shft_wr(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val));
+
+    syntax = ("win %p %p %p %f %f %f,%f,%f,%f,%f,%f,%f",
+      mult_mod,in_dattyp,win_type,shft_val,vec_sz,
+      src_add,dest_add,mult_coef_add,
+      src_add_inc,dest_add_inc,
+      mca_mod,mca_inc);
+}
+
+  // Win instruction with MultMode != 0.
+  define (instr=win_mmn0_ind) {
+    width = 128;
+    alias = win_mmn0_(in_dattyp(in_dattyp),
+	ima_fld(1),win_type(win_type),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),shft_ofst(0),mca_inc(mca_inc),
+	shft_wr(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val));
+
+    syntax = ("win.ind %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+      mult_mod,in_dattyp,win_type,shft_val,vec_sz,
+      src_add,mult_coef_add,
+      src_add_inc,dest_add_inc,
+      mca_mod,mca_inc);
+}
+
+  define (instr=win_mmn0_shft) {
+    width = 128;
+    alias = win_mmn0_(in_dattyp(in_dattyp),
+	ima_fld(0),win_type(win_type),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),shft_ofst(shft_ofst),mca_inc(mca_inc),
+	shft_wr(shft_wr),mult_mod(mult_mod),shft_src(1),shft_val(0));
+
+    syntax = ("win.shift_wr %p %p %p %p %f %f %f,%f,%f,%f,%f,%f,%f",
+      mult_mod,in_dattyp,win_type,shft_ofst,shft_wr,vec_sz,
+      src_add,dest_add,mult_coef_add,
+      src_add_inc,dest_add_inc,
+      mca_mod,mca_inc);
+}
+
+  define (instr=win_mmn0_shft_ind) {
+    width = 128;
+    alias = win_mmn0_(in_dattyp(in_dattyp),
+	ima_fld(1),win_type(win_type),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),shft_ofst(shft_ofst),mca_inc(mca_inc),
+	shft_wr(shft_wr),mult_mod(mult_mod),shft_src(1),shft_val(0));
+
+    syntax = ("win.shift_wr.ind %p %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+      mult_mod,in_dattyp,win_type,shft_ofst,shft_wr,vec_sz,
+      src_add,mult_coef_add,
+      src_add_inc,dest_add_inc,
+      mca_mod,mca_inc);
+}
+ 
+/*
+rdx4                                in_dattyp win_type repeat quad_ext tw_ovs fft_rnd shft_val                                vec_sz src_add, dest_add,                src_add_inc, dest_add_inc, cc_im, cc_re
+rdx4.ind                            in_dattyp win_type repeat quad_ext tw_ovs fft_rnd shft_val                                vec_sz src_add,                          src_add_inc, dest_add_inc, cc_im, cc_re
+rdx4                      mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd                                         vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.ind                  mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd                                         vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.shift                mult_mode in_dattyp win_type repeat quad_ext tw_ovs         shft_val                                vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.shift.ind            mult_mode in_dattyp win_type repeat quad_ext tw_ovs         shft_val                                vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.shift_wr             mult_mode in_dattyp win_type repeat quad_ext tw_ovs                             shft_ofst  shft_wr  vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.shift_wr.ind         mult_mode in_dattyp win_type repeat quad_ext tw_ovs                             shft_ofst  shft_wr  vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.adptv                mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd          adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.adptv.ind            mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd          adptv_shft adptv_ofst adptv_wr vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.adptv.shift          mult_mode in_dattyp win_type repeat quad_ext tw_ovs         shft_val adptv_shft                     vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.adptv.shift.ind      mult_mode in_dattyp win_type repeat quad_ext tw_ovs         shft_val adptv_shft                     vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.adptv.shift_wr       mult_mode in_dattyp win_type repeat quad_ext tw_ovs                  adptv_shft shft_ofst  shft_wr  vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4.adptv.shift_wr.ind   mult_mode in_dattyp win_type repeat quad_ext tw_ovs                  adptv_shft shft_ofst  shft_wr  vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+   // rdx4 instruction with MultMode == 0.
+  define (instr=rdx4_mm0_) {
+    width = 128;
+    fields = (opcode(0x22),in_dattyp,win_type_rdx,fft_rnd,adptv(0),adptv_shft(0),quad_ext,
+	repeat,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	cc_im,
+	src_add_inc,dest_add_inc,
+	cc_re,
+	adptv_wrnum(0),mult_mod(0),shft_src(0),shft_val,tw_ovs);
+
+    dsyntax = ("rdx4 mult_mode=0 %p %p %p %p %f %f fft_round=%f %f vec_size=%f src=%f dest=%f src_inc=%f dest_inc=%f cc_im=%f cc_re=%f",
+	ima_fld, in_dattyp, win_type_rdx, repeat, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc,
+	cc_im,cc_re);
+
+    action = { };
+  }
+
+  define (instr=rdx4_mm0) {
+
+    width = 128;
+    alias = rdx4_mm0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	cc_im(cc_im),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	cc_re(cc_re),
+	shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+      in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,fft_rnd,shft_val,
+      vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,cc_im,cc_re);
+}
+
+  define (instr=rdx4_mm0_ind) {
+
+    width = 128;
+    alias = rdx4_mm0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	cc_im(cc_im),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	cc_re(cc_re),
+	shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+      in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,fft_rnd,shft_val,
+      vec_sz,src_add,src_add_inc,dest_add_inc,cc_im,cc_re);
+}
+
+   // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_) {
+    width = 128;
+    fields = (opcode(0x22),in_dattyp,win_type_rdx,fft_rnd,adptv,adptv_shft,quad_ext,
+	repeat,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc,
+	mca_mod,adptv_ofst,mca_inc,
+	adptv_wrnum,mult_mod,shft_src,shft_val,tw_ovs);
+
+    dsyntax = ("rdx4 mult_mode=%p %p %p %p %f %f %f fft_round=%f adptv=%f %f %f %f  shift=%f %f %f %f vec_size=%f src=%f dest=%f mult_coef=%f src_inc=%f dest_inc=%f mca_mod=%f mca_inc=%f",
+	mult_mod,ima_fld,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,fft_rnd,
+	adptv,adptv_shft,adptv_wrnum,adptv_ofst,
+	shft_val,shft_src,adptv_wrnum,adptv_ofst,
+	vec_sz,src_add,dest_add,mult_coef_add,
+	src_add_inc,dest_add_inc,
+	mca_mod,mca_inc);
+
+    action = { };
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_ind) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_adptv) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(adptv_ofst),mca_inc(mca_inc),
+	adptv_wrnum(adptv_wrnum),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.adptv %p %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_adptv_ind) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(adptv_ofst),mca_inc(mca_inc),
+	adptv_wrnum(adptv_wrnum),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.adptv.ind %p %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_shft) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.shift %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              shft_val,vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_shft_wr) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(shft_ofst),mca_inc(mca_inc),
+	adptv_wrnum(shft_wr),mult_mod(mult_mod),shft_src(1),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.shift_wr %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,shft_ofst,
+              shft_wr,vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_shft_ind) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.shift.ind %p %p %p %p %p %f %f %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              shft_val,vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_shft_wr_ind) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(shft_ofst),mca_inc(mca_inc),
+	adptv_wrnum(shft_wr),mult_mod(mult_mod),shft_src(1),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.shift_wr.ind %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,shft_ofst,
+              shft_wr,vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_adptv_shft) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.adptv.shift %p %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              shft_val,adptv_shft,vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_adptv_shft_wr) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(shft_ofst),mca_inc(mca_inc),
+	adptv_wrnum(shft_wr),mult_mod(mult_mod),shft_src(1),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.adptv.shift_wr %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,adptv_shft,shft_ofst,
+              shft_wr,vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_adptv_shft_ind) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.adptv.shift.ind %p %p %p %p %p %p %f %f %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              shft_val,adptv_shft,vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // RDX4 instruction with MultMode != 0.
+  define (instr=rdx4_mmn0_adptv_shft_wr_ind) {
+
+    width = 128;
+    alias = rdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(shft_ofst),mca_inc(mca_inc),
+	adptv_wrnum(shft_wr),mult_mod(mult_mod),shft_src(1),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx4.adptv.shift_wr.ind %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,adptv_shft,shft_ofst,
+              shft_wr,vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+
+  // RDX2 instruction 
+/*
+rdx2                         in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat real_fft shft_val                                vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+rdx2.ind                     in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat real_fft shft_val                                vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+rdx2.shift_wr                in_dattyp quad_ext tw_ovs              repeat real_fft                     shft_ofst  shft_wr  vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+rdx2.shift_wr.ind            in_dattyp quad_ext tw_ovs              repeat real_fft                     shft_ofst  shft_wr  vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+rdx2.adptv                   in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat real_fft shft_val adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+rdx2.adptv.ind               in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat real_fft shft_val adptv_shft adptv_ofst adptv_wr vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+rdx2.adptv.shift_wr          in_dattyp quad_ext tw_ovs              repeat real_fft          adptv_shft shft_ofst  shft_wr  vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+rdx2.adptv.shift_wr.ind      in_dattyp quad_ext tw_ovs              repeat real_fft          adptv_shft shft_ofst  shft_wr  vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+*/
+  define (instr=rdx2_) {
+    width = 128;
+    fields = (opcode(0x23),in_dattyp,fft_rnd_rdx2,real_fft,adptv,adptv_shft,quad_ext,
+	repeat2,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc,
+	adptv_ofst,adptv_wrnum,
+	shft_src,shft_val,tw_ovs);
+
+    dsyntax = ("rdx2 %f %f %f %f fft_round=%f %f %f adptv=%f %f %f %f shift=%f %f %f %f vec_size=%f src=%f dest=%f mult_coef=%f src_inc=%f dest_inc=%f",
+	ima_fld,in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat2,real_fft,
+	adptv,adptv_shft,adptv_wrnum,adptv_ofst,
+	shft_val,shft_src,adptv_wrnum,adptv_ofst,
+	vec_sz,src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc);
+
+
+    action = { };
+  }
+
+  // RDX2 instruction 
+  define (instr=rdx2) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(fft_rnd_rdx2),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(0),vec_sz(vec_sz),real_fft(real_fft),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(0),shft_val(shft_val),shft_src(0),
+	adptv_wrnum(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,real_fft,shft_val,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // RDX2 instruction
+  define (instr=rdx2_ind) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(fft_rnd_rdx2),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(1),vec_sz(vec_sz),real_fft(real_fft),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(0),shft_val(shft_val),shft_src(0),
+	adptv_wrnum(0),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,real_fft,shft_val,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // RDX2 instruction 
+  define (instr=rdx2_shift_wr) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),real_fft(real_fft),fft_rnd_rdx2(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2.shift_wr %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,real_fft,
+              adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // RDX2 instruction 
+  define (instr=rdx2_shift_wr_ind) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),real_fft(real_fft),fft_rnd_rdx2(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2.shift_wr.ind %p %p %p %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,real_fft,
+              adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // RDX2 instruction 
+  define (instr=rdx2_adptv) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),real_fft(real_fft),fft_rnd_rdx2(fft_rnd_rdx2),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(shft_val),shft_src(0),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2.adptv %p %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,real_fft,shft_val,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // RDX2 instruction 
+  define (instr=rdx2_adptv_ind) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),real_fft(real_fft),fft_rnd_rdx2(fft_rnd_rdx2),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(shft_val),shft_src(0),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2.adptv.ind %p %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,real_fft,shft_val,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // RDX2 instruction 
+  define (instr=rdx2_adptv_shift_wr) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),real_fft(real_fft),fft_rnd_rdx2(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2.adptv.shift_wr %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,real_fft,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // RDX2 instruction 
+  define (instr=rdx2_adptv_shift_wr_ind) {
+
+    width = 128;
+    alias = rdx2_(in_dattyp(in_dattyp),real_fft(real_fft),fft_rnd_rdx2(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("rdx2.adptv.shift_wr.ind %p %p %p %p %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,real_fft,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+/*
+fir                 in_dattyp win_type init no_of_taps shft_val          vec_sz src_add, dest_add, tap_coef_add, src_add_inc, dest_add_inc  
+fir.ind             in_dattyp win_type init no_of_taps shft_val          vec_sz src_add,           tap_coef_add, src_add_inc, dest_add_inc 
+fir.shift_wr        in_dattyp win_type init no_of_taps shft_ofst shft_wr vec_sz src_add, dest_add, tap_coef_add, src_add_inc, dest_add_inc
+fir.shift_wr.ind    in_dattyp win_type init no_of_taps shft_ofst shft_wr vec_sz src_add,           tap_coef_add, src_add_inc, dest_add_inc
+*/
+
+  define (instr=fir_) {
+
+    width = 128;
+    fields = (opcode(0x29),in_dattyp,win_type,init,no_of_taps,
+	ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	tap_coef_add,
+	src_add_inc,dest_add_inc,
+	shft_ofst,
+	shft_wr,shft_src,shft_val);
+
+    dsyntax = ("fir %p %p %p %p taps=%f shift=%f %f %f %f vec_size=%f src=%f dest=%f tap_coef=%f src_inc=%f dest_inc=%f",
+	ima_fld, in_dattyp, win_type, init, no_of_taps, shft_src,
+	shft_wr,shft_ofst,shft_val,vec_sz,
+	src_add,
+	dest_add,
+	tap_coef_add,
+	src_add_inc, dest_add_inc);
+
+    action = { };
+  }
+
+  define (instr=fir) {
+    width = 128;
+    alias = fir_(in_dattyp(in_dattyp),win_type(win_type),init(init),no_of_taps(no_of_taps),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	tap_coef_add(is_addr_tram_wr(tap_coef_add)),
+	shft_src(0),shft_wr(0),shft_ofst(0),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	shft_val(shft_val));
+
+    syntax = ("fir %p %p %p %p %f %f %f,%f,%f,%f,%f",
+		in_dattyp,win_type,init,shft_val,no_of_taps,
+		vec_sz,src_add,dest_add,tap_coef_add,src_add_inc,dest_add_inc);
+  }
+
+  define (instr=fir_ind) {
+    width = 128;
+    alias = fir_(in_dattyp(in_dattyp),win_type(win_type),init(init),no_of_taps(no_of_taps),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	tap_coef_add(is_addr_tram_wr(tap_coef_add)),
+	shft_src(0),shft_wr(0),shft_ofst(0),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	shft_val(shft_val));
+
+    syntax = ("fir.ind %p %p %p %p %f %f %f,%f,%f,%f",
+		in_dattyp,win_type,init,shft_val,no_of_taps,
+		vec_sz,src_add,tap_coef_add,src_add_inc,dest_add_inc);
+
+  }
+
+  define (instr=fir_shift_wr) {
+    width = 128;
+    alias = fir_(in_dattyp(in_dattyp),win_type(win_type),init(init),no_of_taps(no_of_taps),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	tap_coef_add(is_addr_tram_wr(tap_coef_add)),
+	shft_src(1),shft_wr(shft_wr),shft_ofst(shft_ofst),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),shft_val(0));
+
+    syntax = ("fir.shift_wr %p %p %p %p %f %f %f %f,%f,%f,%f,%f",
+		in_dattyp,win_type,init,shft_ofst,shft_wr,no_of_taps,
+		vec_sz,src_add,dest_add,tap_coef_add,src_add_inc,dest_add_inc);
+
+  }
+
+  define (instr=fir_shift_wr_ind) {
+    width = 128;
+    alias = fir_(in_dattyp(in_dattyp),win_type(win_type),init(init),no_of_taps(no_of_taps),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	tap_coef_add(is_addr_tram_wr(tap_coef_add)),
+	shft_src(1),shft_wr(shft_wr),shft_ofst(shft_ofst),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),shft_val(0));
+
+    syntax = ("fir.shift_wr.ind %p %p %p %p %f %f %f %f,%f,%f,%f",
+		in_dattyp,win_type,init,shft_ofst,shft_wr,no_of_taps,
+		vec_sz,src_add,tap_coef_add,src_add_inc,dest_add_inc);
+
+  }
+
+/*
+irdx4                        in_dattyp win_type repeat quad_ext tw_ovs fft_rnd shft_val                       vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, cc_im, cc_re
+irdx4.ind                    in_dattyp win_type repeat quad_ext tw_ovs fft_rnd shft_val                       vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, cc_im, cc_re
+irdx4              mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd                                vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+irdx4.ind          mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd                                vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+irdx4.shift        mult_mode in_dattyp win_type repeat quad_ext tw_ovs shft_val                               vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+irdx4.shift.ind    mult_mode in_dattyp win_type repeat quad_ext tw_ovs shft_val                               vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+irdx4.shift_wr     mult_mode in_dattyp win_type repeat quad_ext tw_ovs                    shft_ofst  shft_wr  vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc 
+irdx4.shift_wr.ind mult_mode in_dattyp win_type repeat quad_ext tw_ovs                    shft_ofst  shft_wr  vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+irdx4.adptv        mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+irdx4.adptv.ind    mult_mode in_dattyp win_type repeat quad_ext tw_ovs fft_rnd adptv_shft adptv_ofst adptv_wr vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+   // irdx4 instruction with MultMode == 0.
+  define (instr=irdx4_mm0_) {
+    width = 128;
+    fields = (opcode(0x2b),in_dattyp,win_type_rdx,fft_rnd,adptv(0),adptv_shft(0),quad_ext,
+	repeat,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	cc_im,
+	src_add_inc,dest_add_inc,
+	cc_re,
+	adptv_wrnum(0),mult_mod(0),shft_src(0),shft_val,tw_ovs);
+
+    dsyntax = ("irdx4 mult_mode=0 %p %p %p %f %f %f fft_round=%f %f vec_size=%f src=%f dest=%f src_inc=%f dest_inc=%f cc_im=%f cc_re=%f",
+	ima_fld, in_dattyp, win_type_rdx, repeat, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc,
+	cc_im,cc_re);
+
+    action = { };
+  }
+
+  define (instr=irdx4_mm0) {
+
+    width = 128;
+    alias = irdx4_mm0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	cc_im(cc_im),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	cc_re(cc_re),
+	shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+      in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,fft_rnd,shft_val,
+      vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,cc_im,cc_re);
+}
+
+  define (instr=irdx4_mm0_ind) {
+
+    width = 128;
+    alias = irdx4_mm0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	cc_im(cc_im),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	cc_re(cc_re),
+	shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+      in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,fft_rnd,shft_val,
+      vec_sz,src_add,src_add_inc,dest_add_inc,cc_im,cc_re);
+
+}
+
+   // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_) {
+    width = 128;
+    fields = (opcode(0x2b),in_dattyp,win_type_rdx,fft_rnd,adptv,adptv_shft,quad_ext,
+	repeat,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc,
+	mca_mod,adptv_ofst,mca_inc,
+	adptv_wrnum,mult_mod,shft_src,shft_val,tw_ovs);
+
+    dsyntax = ("irdx4 mult_mode=%p %p %p %p %p %p %f fft_round=%f adptv=%f %f %f %f  shift=%f %f %f %f vec_size=%f src=%f dest=%f mult_coef=%f src_inc=%f dest_inc=%f mca_mod=%f mca_inc=%f",
+	mult_mod,ima_fld,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,fft_rnd,
+	adptv,adptv_shft,adptv_wrnum,adptv_ofst,
+	shft_val,shft_src,adptv_wrnum,adptv_ofst,
+	vec_sz,src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc,
+	mca_mod,mca_inc);
+
+    action = { };
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_ind) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_adptv) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(adptv_ofst),mca_inc(mca_inc),
+	adptv_wrnum(adptv_wrnum),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.adptv %p %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_adptv_ind) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(fft_rnd),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(adptv_ofst),mca_inc(mca_inc),
+	adptv_wrnum(adptv_wrnum),mult_mod(mult_mod),shft_src(0),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.adptv.ind %p %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              fft_rnd,adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_shft) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.shift %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              shft_val,vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_shft_wr) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(adptv_ofst),mca_inc(mca_inc),
+	adptv_wrnum(adptv_wrnum),mult_mod(mult_mod),shft_src(1),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.shift_wr %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_shft_ind) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(0),mca_inc(mca_inc),
+	adptv_wrnum(0),mult_mod(mult_mod),shft_src(0),shft_val(shft_val),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.shift.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              shft_val,vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX4 instruction with MultMode != 0.
+  define (instr=irdx4_mmn0_shft_wr_ind) {
+
+    width = 128;
+    alias = irdx4_mmn0_(in_dattyp(in_dattyp),win_type_rdx(win_type_rdx),fft_rnd(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	mca_mod(mca_mod),adptv_ofst(adptv_ofst),mca_inc(mca_inc),
+	adptv_wrnum(adptv_wrnum),mult_mod(mult_mod),shft_src(1),shft_val(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx4.shift_wr.ind %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+              mult_mod,in_dattyp,win_type_rdx,repeat,quad_ext,tw_ovs,
+              adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc,mca_mod,mca_inc);
+  }
+
+  // IRDX2 instruction 
+/*
+irdx2                         in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat shft_val                                vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+irdx2.ind                     in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat shft_val                                vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+irdx2.shift_wr                in_dattyp quad_ext tw_ovs              repeat                     shft_ofst  shft_wr  vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+irdx2.shift_wr.ind            in_dattyp quad_ext tw_ovs              repeat                     shft_ofst  shft_wr  vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+irdx2.adptv                   in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat shft_val adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+irdx2.adptv.ind               in_dattyp quad_ext tw_ovs fft_rnd_rdx2 repeat shft_val adptv_shft adptv_ofst adptv_wr vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+irdx2.adptv.shift_wr          in_dattyp quad_ext tw_ovs              repeat          adptv_shft shft_ofst  shft_wr  vec_sz src_add, dest_add, mult_coef_add, src_add_inc, dest_add_inc
+irdx2.adptv.shift_wr.ind      in_dattyp quad_ext tw_ovs              repeat          adptv_shft shft_ofst  shft_wr  vec_sz src_add,           mult_coef_add, src_add_inc, dest_add_inc
+*/
+
+  define (instr=irdx2_) {
+    width = 128;
+    fields = (opcode(0x2c),in_dattyp,fft_rnd_rdx2,adptv,adptv_shft,quad_ext,
+	repeat2,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc,
+	adptv_ofst,adptv_wrnum,
+	shft_src,shft_val,tw_ovs);
+
+    dsyntax = ("irdx2 %f %f %f %f fft_round=%f %f adptv=%f %f %f %f shift=%f %f %f %f vec_size=%f src=%f dest=%f mult_coef=%f src_inc=%f dest_inc=%f",
+	ima_fld,in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat2,
+	adptv,adptv_shft,adptv_wrnum,adptv_ofst,
+	shft_val,shft_src,adptv_wrnum,adptv_ofst,
+	vec_sz,src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc);
+
+
+    action = { };
+  }
+
+  // IRDX2 instruction 
+  define (instr=irdx2) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(fft_rnd_rdx2),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(0),shft_val(shft_val),shft_src(0),
+	adptv_wrnum(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2 %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,shft_val,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // IRDX2 instruction
+  define (instr=irdx2_ind) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(fft_rnd_rdx2),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(0),shft_val(shft_val),shft_src(0),
+	adptv_wrnum(0),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2.ind %p %p %p %p %p %p %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,shft_val,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // IRDX2 instruction 
+  define (instr=irdx2_shift_wr) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2.shift_wr %p %p %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,
+              adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // IRDX2 instruction 
+  define (instr=irdx2_shift_wr_ind) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(0),adptv(0),adptv_shft(0),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2.shift_wr.ind %p %p %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,
+              adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // IRDX2 instruction 
+  define (instr=irdx2_adptv) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(fft_rnd_rdx2),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+	repeat2(repeat),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	adptv_ofst(adptv_ofst),shft_val(shft_val),shft_src(0),
+	adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2.adptv %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,shft_val,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // IRDX2 instruction 
+  define (instr=irdx2_adptv_ind) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(fft_rnd_rdx2),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+		repeat2(repeat),ima_fld(1),vec_sz(vec_sz),
+		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		adptv_ofst(adptv_ofst),shft_val(shft_val),shft_src(0),
+		adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2.adptv.ind %p %p %p %p %p %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,fft_rnd_rdx2,repeat,shft_val,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // IRDX2 instruction 
+  define (instr=irdx2_adptv_shift_wr) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+		repeat2(repeat),ima_fld(0),vec_sz(vec_sz),
+		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+		adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2.adptv.shift_wr %p %p %p %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+  // IRDX2 instruction 
+  define (instr=irdx2_adptv_shift_wr_ind) {
+
+    width = 128;
+    alias = irdx2_(in_dattyp(in_dattyp),fft_rnd_rdx2(0),adptv(1),adptv_shft(adptv_shft),quad_ext(quad_ext),
+		repeat2(repeat),ima_fld(1),vec_sz(vec_sz),
+		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		adptv_ofst(adptv_ofst),shft_val(0),shft_src(1),
+		adptv_wrnum(adptv_wrnum),tw_ovs(tw_ovs));
+
+    syntax = ("irdx2.adptv.shift_wr.ind %p %p %p %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,quad_ext,tw_ovs,repeat,
+              adptv_shft,adptv_ofst,adptv_wrnum,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+ // SCP instruction 
+/*
+scp                in_dattyp re_im_coeff shft_val         no_of_taps vec_sz src_add, dest_add, coef_add, src_add_inc, dest_add_inc
+scp.ind            in_dattyp re_im_coeff shft_val         no_of_taps vec_sz src_add,           coef_add, src_add_inc, dest_add_inc
+scp.shift_wr       in_dattyp re_im_coeff shft_ofst sht_wr no_of_taps vec_sz src_add, dest_add, coef_add, src_add_inc, dest_add_inc
+scp.shift_wr.ind   in_dattyp re_im_coeff shft_ofst sht_wr no_of_taps vec_sz src_add,           coef_add, src_add_inc, dest_add_inc
+*/
+  define (instr=scp_) {
+    width = 128;
+    fields = (opcode(0x2a),in_dattyp,re_im_coeff,no_of_taps,
+		ima_fld,vec_sz,
+		src_add,
+		dest_add,
+		mult_coef_add,
+		src_add_inc,dest_add_inc,
+		shft_ofst,
+		shft_wr,shft_src,shft_val);
+
+    dsyntax = ("scp %f %f %f no_of_taps=%f vec_size=%f src=%f dest=%f mult_coef=%f src_inc=%f dest_inc=%f shift=%f %f %f %f",
+	ima_fld,in_dattyp,re_im_coeff,no_of_taps,
+	vec_sz, src_add,
+	dest_add,
+	mult_coef_add,
+	src_add_inc,dest_add_inc,
+	shft_val,shft_src,shft_wr,shft_ofst);
+
+    action = { };
+  }
+
+  // scp instruction
+  define (instr=scp) {
+
+    width = 128;
+    alias = scp_(in_dattyp(in_dattyp),re_im_coeff(re_im_coeff),no_of_taps(no_of_taps),
+		ima_fld(0),vec_sz(vec_sz),
+		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		shft_ofst(0),
+		shft_wr(0),shft_src(0),shft_val(shft_val));
+
+    syntax = ("scp %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,re_im_coeff,shft_val,no_of_taps,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+  }
+
+  // scp instruction
+  define (instr=scp_ind) {
+
+    width = 128;
+    alias = scp_(in_dattyp(in_dattyp),re_im_coeff(re_im_coeff),no_of_taps(no_of_taps),
+		ima_fld(1),vec_sz(vec_sz),
+		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		shft_ofst(0),
+		shft_wr(0),shft_src(0),shft_val(shft_val));
+
+    syntax = ("scp.ind %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,re_im_coeff,shft_val,no_of_taps,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+ // scp instruction 
+  define (instr=scp_shft_wr) {
+
+    width = 128;
+    alias = scp_(in_dattyp(in_dattyp),re_im_coeff(re_im_coeff),no_of_taps(no_of_taps),
+		ima_fld(0),vec_sz(vec_sz),
+		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		shft_ofst(shft_ofst),
+		shft_wr(shft_wr),shft_src(1),shft_val(0));
+
+    syntax = ("scp.shift_wr %p %p %p %p %f %f %f,%f,%f,%f,%f",
+              in_dattyp,re_im_coeff,shft_ofst,shft_wr,no_of_taps,
+              vec_sz,src_add,dest_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+  }
+
+  // scp instruction
+  define (instr=scp_shft_wr_ind) {
+
+    width = 128;
+    alias = scp_(in_dattyp(in_dattyp),re_im_coeff(re_im_coeff),no_of_taps(no_of_taps),
+		ima_fld(1),vec_sz(vec_sz),
+		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		mult_coef_add(is_addr_tram_wr(mult_coef_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		shft_ofst(shft_ofst),
+		shft_wr(shft_wr),shft_src(1),shft_val(0));
+
+    syntax = ("scp.shift_wr.ind %p %p %p %p %f %f %f,%f,%f,%f",
+              in_dattyp,re_im_coeff,shft_ofst,shft_wr,no_of_taps,
+              vec_sz,src_add,mult_coef_add,
+	      src_add_inc,dest_add_inc);
+
+  }
+
+	// COPY
+/*
+copy	                in_dattyp cp_type rst_n_keep                  vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+copy.ind	        in_dattyp cp_type rst_n_keep                  vec_sz src_add,           src_add_inc, dest_add_inc
+copy_n_mask        	in_dattyp cp_type rst_n_keep                  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mask
+copy_n_mask.ind        	in_dattyp cp_type rst_n_keep                  vec_sz src_add,           src_add_inc, dest_add_inc, mask
+copy.trans	        in_dattyp cp_type rst_n_keep                  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc
+copy.trans.ind	        in_dattyp cp_type rst_n_keep                  vec_sz src_add,           src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc
+copy.trans_n_mask       in_dattyp cp_type rst_n_keep                  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc, mask
+copy.trans_n_mask.ind   in_dattyp cp_type rst_n_keep                  vec_sz src_add,           src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc, mask
+copy.thld        	in_dattyp cp_type rst_n_keep pre_proc rst_acc vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+copy.thld.ind        	in_dattyp cp_type rst_n_keep pre_proc rst_acc vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+copy.thld_n_step	in_dattyp cp_type rst_n_keep pre_proc rst_acc vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add, thld_const
+copy.thld_n_step.ind	in_dattyp cp_type rst_n_keep pre_proc rst_acc vec_sz src_add,           src_add_inc, dest_add_inc, thld_add, thld_const
+copy.scat	        in_dattyp         rst_n_keep                  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, tw_add
+copy.scat.ind        	in_dattyp         rst_n_keep                  vec_sz src_add,           src_add_inc, dest_add_inc, tw_add
+copy_n_mask.scat	in_dattyp         rst_n_keep                  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, tw_add, mask
+copy_n_mask.scat.ind	in_dattyp         rst_n_keep                  vec_sz src_add,           src_add_inc, dest_add_inc, tw_add, mask
+copy.clear        	                                              vec_sz          dest_add,                            mask
+
+*/
+
+  define (instrfield=tw_add) {
+	bits = (63,48);
+}
+
+  define (instrfield=cp_mask) {
+	bits = (31,0);
+}
+
+  define (instrfield=thld_const) {
+	//bits = (31,16);
+	width = 16;
+	pseudo = true;
+}
+
+  define (instrfield=thld_add_cp) {
+	//bits = (15,0);
+	pseudo = true;
+	width = 16;
+}
+
+  define (instrfield=mask_mode) {
+	bits = 110;
+}
+
+  define (instr=copy_mask) {
+    width = 128;    
+    fields = (opcode(0x25),in_dattyp2,cp_type,
+		pre_proc,rst_acc,
+		rst_n_keep,ima_fld,vec_sz,mask_mode,
+		src_add,
+		dest_add,
+		tw_add,
+		src_add_inc,dest_add_inc,
+		cp_mask);
+    action = { };
+  }
+
+  define (instr=copy_trans_) {
+    width = 128;    
+    fields = (opcode(0x25),in_dattyp2,pre_proc(0),rst_acc(0),cp_type,
+		rst_n_keep,ima_fld,vec_sz,mask_mode,
+		src_add,
+		dest_add,
+		blk_src_inc,blk_dest_inc,
+		src_add_inc,dest_add_inc,
+		cp_mask);
+    action = { };
+  }
+
+unsigned merge_to_mask(unsigned up, unsigned lo) {
+	return ((up << 16) | (lo & 0xFFFF));
+}
+
+int check_copy_type ( int type, int copy_class ) {
+enum copy_cl { simple, threshold, threshold_step, transpose };
+
+	switch ((enum copy_cl)copy_class) {
+	case simple:
+		if (type==0 || 4 <= type && type <= 10 || type == 12)
+			return type;
+		break;
+	case threshold:
+		if (1 <= type && type <= 2 || type == 17)
+			return type;
+		break;
+	case threshold_step:
+		if (18 <= type && type <= 20)
+			return type;
+		break;
+	case transpose:
+		if (type == 3 || 13 <= type && type <= 16)
+			return type;
+		break;
+	}
+	error(0, "illegal copy type ", type);
+	return 0;
+}
+
+ define (instr=copy) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type, 0)),
+		mask_mode(0),tw_add(0),
+		rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(0));
+
+    syntax = ("copy %p %p %p %f %f,%f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc
+              );
+  }
+
+  define (instr=copy_ind) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type, 0)),
+		rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+		mask_mode(0),tw_add(0),
+		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(0));
+
+    syntax = ("copy.ind %p %p %p %f %f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc
+              );
+  }
+
+  define (instr=copy_n_mask) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type, 0)),
+		mask_mode(1),tw_add(0),
+		rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(cp_mask));
+
+    syntax = ("copy_n_mask %p %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,cp_mask
+              );
+  }
+
+  define (instr=copy_n_mask_ind) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type, 0)),rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+		mask_mode(1),tw_add(0),
+		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(cp_mask));
+
+    syntax = ("copy_n_mask.ind %p %p %p %f %f,%f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc,cp_mask
+              );
+  }
+
+  define (instr=copy_trans) {
+
+    width = 128;    
+    alias = copy_trans_(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,3)),
+		mask_mode(0),
+		rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(0));
+
+    syntax = ("copy.trans %p %p %p %f %f,%f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc
+              );
+  }
+
+  define (instr=copy_trans_ind) {
+
+    width = 128;    
+    alias = copy_trans_(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,3)),rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+		mask_mode(0),
+		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		mask_mode(0),
+		blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(0));
+
+    syntax = ("copy.trans.ind %p %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc
+              );
+  }
+
+  define (instr=copy_trans_n_mask) {
+
+    width = 128;    
+    alias = copy_trans_(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,3)),
+		rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+		mask_mode(1),
+		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(cp_mask));
+
+    syntax = ("copy.trans_n_mask %p %p %p %f %f,%f,%f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc,cp_mask
+              );
+  }
+
+  define (instr=copy_trans_n_mask_ind) {
+
+    width = 128;    
+    alias = copy_trans_(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,3)),rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+		src_add(is_addr_wr(src_add)),
+		mask_mode(1),
+		dest_add(0),
+		blk_src_inc(blk_src_inc),blk_dest_inc(blk_dest_inc),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(cp_mask));
+
+    syntax = ("copy.trans_n_mask.ind %p %p %p %f %f,%f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc,blk_src_inc, blk_dest_inc,cp_mask
+              );
+  }
+
+  int get_thld_add(unsigned int mask) {
+	if (mask >> 16) {error(0, "illegal thld address 0x", hex, mask); }
+	else validate_addr(mask, 0);
+        return mask;
+  }
+
+  define (instr=copy_thld) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,1)),rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+		pre_proc(pre_proc),rst_acc(rst_acc),
+     		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(merge_to_mask(0,get_thld_add(thld_add_cp))));
+
+    syntax = ("copy.thld %p %p %p %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,pre_proc,rst_acc,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,thld_add_cp
+              );
+  }
+
+  define (instr=copy_thld_ind) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,1)),rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+		pre_proc(pre_proc),rst_acc(rst_acc),
+     		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(merge_to_mask(0,get_thld_add(thld_add_cp))));
+
+    syntax = ("copy.thld.ind %p %p %p %p %p %f %f,%f,%f,%f",
+              in_dattyp2,cp_type,pre_proc,rst_acc,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc,thld_add_cp
+              );
+  }
+
+  define (instr=copy_thld_n_step) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,2)),rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+		pre_proc(pre_proc),rst_acc(rst_acc),
+     		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(merge_to_mask(thld_const,get_thld_add(thld_add_cp))));
+
+    syntax = ("copy.thld_n_step %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,pre_proc,rst_acc,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,thld_add_cp,thld_const
+              );
+  }
+
+  define (instr=copy_thld_n_step_ind) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),cp_type(check_copy_type(cp_type,2)),rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+		pre_proc(pre_proc),rst_acc(rst_acc),
+     		src_add(is_addr_wr(src_add)),
+		dest_add(0),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(merge_to_mask(thld_const,get_thld_add(thld_add_cp))));
+
+    syntax = ("copy.thld_n_step.ind %p %p %p %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp2,cp_type,pre_proc,rst_acc,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc,thld_add_cp,thld_const
+              );
+  }
+
+  define (instr=copy_scat) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+     		src_add(is_addr_oram(src_add)),cp_type(21),
+		dest_add(is_addr_oram(dest_add)),
+		mask_mode(0),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(0),tw_add(tw_add));
+
+    syntax = ("copy.scat %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp2,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,tw_add
+              );
+  }
+
+  define (instr=copy_scat_ind) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+     		src_add(is_addr_wr(src_add)),cp_type(21),
+		dest_add(0),
+		mask_mode(0),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(0),tw_add(tw_add));
+
+    syntax = ("copy.scat.ind %p %p %f %f,%f,%f,%f",
+              in_dattyp2,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc,tw_add
+              );
+  }
+
+  define (instr=copy_n_mask_scat) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),rst_n_keep(rst_n_keep),ima_fld(0),vec_sz(vec_sz),
+		mask_mode(1),cp_type(21),
+     		src_add(is_addr_oram(src_add)),
+		dest_add(is_addr_oram(dest_add)),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(cp_mask),tw_add(tw_add));
+
+    syntax = ("copy_n_mask.scat %p %p %f %f,%f,%f,%f,%f,%f",
+              in_dattyp2,rst_n_keep,
+              vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,tw_add,cp_mask
+              );
+  }
+
+  define (instr=copy_n_mask_scat_ind) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(in_dattyp2),rst_n_keep(rst_n_keep),ima_fld(1),vec_sz(vec_sz),
+     		src_add(is_addr_wr(src_add)),cp_type(21),
+		mask_mode(1),
+		dest_add(0),
+		src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+		cp_mask(cp_mask),tw_add(tw_add));
+
+    syntax = ("copy_n_mask.scat.ind %p %p %f %f,%f,%f,%f,%f",
+              in_dattyp2,rst_n_keep,
+              vec_sz,src_add,src_add_inc,dest_add_inc,tw_add,cp_mask
+              );
+  }
+
+  define (instr=copy_clear) {
+
+    width = 128;    
+    alias = copy_mask(in_dattyp2(0),cp_type(11),rst_n_keep(0),ima_fld(0),vec_sz(vec_sz),
+     		src_add(0),cp_type(11),
+		mask_mode(0),tw_add(0),
+		dest_add(is_addr_oram(dest_add)),
+		src_add_inc(0),dest_add_inc(0),
+		cp_mask(cp_mask));
+
+    syntax = ("copy.clear %f %f,%f",vec_sz,dest_add,cp_mask);
+  }
+
+/*
+pdma        se data_packing trans_type sync_async trace coherent vector_len sysram_mem_start_addr, opram_mem_start_addr, opram_skip_addr, opram_continuous_addr, sysram_skip_addr, sysram_continous_addr
+pdma.ind    se data_packing trans_type sync_async trace coherent vector_len sysram_mem_start_addr, sysram_offset_wr_num, opram_skip_addr, opram_continuous_addr, sysram_skip_addr, sysram_continous_addr
+*/
+
+  define (instrfield=se)      { bits = 120; enumerated = (".zeropad",".signext"); }
+  define (instrfield=pdma_se) { pseudo = true; size = 1; enumerated = (".zeropad",".signext"); value = ".zeropad"; }
+
+  define (instrfield=pdma_trace)    { pseudo = true; size = 1; enumerated = (("",".notrace"), ".trace"); value = ""; }
+  define (instrfield=pdma_coherent) { pseudo = true; size = 1; enumerated = (("",".nocoherent"), ".coherent"); value = ""; }
+
+  define (instrfield=data_packing) {
+	bits = (119,114);
+	enumerated = (".16cmplx",".24cmplx",".24real",".16real",".48bin",".16swap",".16clubbing",
+		reserved, reserved, reserved, reserved,
+		reserved, reserved, reserved, reserved,
+		reserved, reserved, 
+		".CP4Q", ".CP4Q_FMTA", ".CP4Q_FMTB",
+		".CP8D_FMTA", ".CP8D_FMTB", ".CP8D_FMTC",
+		".CP16_FMTA", ".CP16_FMTB", ".CP16_FMTC", ".CP16_FMTD", ".CP32_FMTB",
+		reserved, reserved, reserved, reserved,
+		reserved, reserved, 
+		".abs_8_untagged", ".idx_8_untagged", ".idx_sum8_untagged", ".abs_8_tagged",
+		".idx_8_tagged", ".idx_sum8_tagged",
+		".abs_16_untagged", ".idx_16_untagged", ".idx_sum16_untagged",
+		".abs_16_tagged", ".idx_16_tagged", ".idx_sum16_tagged",
+		".abs_24_untagged", ".idx_24_untagged", ".idx_sum24_untagged",
+		".abs_24_tagged", ".idx_24_tagged", ".idx_sum24_tagged",
+		".abs_32_untagged", ".idx_32_untagged", ".idx_sum32_untagged");
+  }
+
+  define (instrfield=pdma_data_packing) {
+	// PDMA
+    size = 5;
+    pseudo = true;
+    enumerated = (".16cmplx",".24cmplx",".24real",".16real",".48bin",".16swap",".16clubbing",
+		reserved, reserved, reserved, reserved,
+		reserved, reserved, reserved, reserved,
+		reserved, reserved, 
+		".CP4Q", ".CP4Q_FMTA", ".CP4Q_FMTB",
+		".CP8D_FMTA", ".CP8D_FMTB", ".CP8D_FMTC",
+		".CP16_FMTA", ".CP16_FMTB", ".CP16_FMTC", ".CP16_FMTD", ".CP32_FMTB",
+		reserved, reserved, reserved, reserved,
+		reserved, reserved, 
+		".abs_8_untagged", ".idx_8_untagged", ".idx_sum8_untagged", ".abs_8_tagged",
+		".idx_8_tagged", ".idx_sum8_tagged",
+		".abs_16_untagged", ".idx_16_untagged", ".idx_sum16_untagged",
+		".abs_16_tagged", ".idx_16_tagged", ".idx_sum16_tagged",
+		".abs_24_untagged", ".idx_24_untagged", ".idx_sum24_untagged",
+		".abs_24_tagged", ".idx_24_tagged", ".idx_sum24_tagged",
+		".abs_32_untagged", ".idx_32_untagged", ".idx_sum32_untagged");
+    value = ".16cmplx";
+  }
+
+  define (instrfield=trans_type) { bits = 113; enumerated = (".sysram2opram",".opram2sysram"); }
+  define (instrfield=pdma_trans_type) {
+	// PDMA
+    pseudo = true;
+    size = 1;
+    enumerated = (".sysram2opram",".opram2sysram");
+    value = ".sysram2opram";
+  }
+
+  define (instrfield=sync_async) { bits = 112; enumerated = (".async",".sync"); }
+  define (instrfield=pdma_sync_async) {
+    size = 1;
+    pseudo = true;
+    enumerated = (".async",".sync");
+    value = ".sync";
+  }
+
+  define (instrfield=vector_len) { bits = (111,96); }
+  define (instrfield=pdma_vector_len) { size = 16; pseudo = true; }
+
+  define (instrfield=sysram_mem_start_addr) { bits = (95,64); size = 32; }
+  define (instrfield=pdma_sysram_mem_start_addr) { size = 32; pseudo = true; }
+
+  define (instrfield=opram_mem_start_addr) { bits = (63,48); }
+  define (instrfield=pdma_opram_mem_start_addr) { size = 16; pseudo = true; }
+
+  define (instrfield=opram_skip_addr) { bits = (47,36); }
+  define (instrfield=pdma_opram_skip_addr) { size = 12; pseudo = true; }
+
+  define (instrfield=opram_continuous_addr) { bits = (35,24); }
+  define (instrfield=pdma_opram_continuous_addr) { size = 12; pseudo = true; }
+
+  define (instrfield=sysram_skip_addr) { bits = (23,12); }
+  define (instrfield=pdma_sysram_skip_addr) { size = 12; pseudo = true; }
+
+  define (instrfield=sysram_continous_addr) { bits = (11,0); }
+  define (instrfield=pdma_sysram_continous_addr) { size = 12; pseudo = true; }
+
+  define (instr=pdma_) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld,se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+	      opram_mem_start_addr,
+	      opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+
+    assemble = false;
+    action = { };
+  }
+
+  define (instr=pdma) {
+
+    width = 128;
+    syntax = ("pdma %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+              pdma_se,pdma_data_packing,pdma_trans_type,pdma_sync_async,pdma_trace,pdma_coherent,
+              pdma_vector_len,pdma_sysram_mem_start_addr,pdma_opram_mem_start_addr,
+              pdma_opram_skip_addr,pdma_opram_continuous_addr,
+              pdma_sysram_skip_addr,pdma_sysram_continous_addr
+              );
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+	InstrArgs nargs = args;
+        unsigned addend = nargs[5].value() + nargs[4].value()*2;
+	if (addend) nargs[7].set_value(nargs[7].value()+addend);
+	nargs.erase(nargs.begin() + 4, nargs.begin() + 5);
+        b.push_back(createInstr("pdma_",nargs));
+        return b;    
+      };
+  }
+
+  define (instr=pdma_ind) {
+
+    width = 128;
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+	InstrArgs nargs = args;
+        unsigned addend = nargs[5].value() + nargs[4].value()*2;
+	if (addend) nargs[7].set_value(nargs[7].value()+addend);
+	nargs.erase(nargs.begin() + 4, nargs.begin() + 5);
+        b.push_back(createInstr("pdma_",nargs));
+        return b;    
+
+      };
+
+    syntax = ("pdma.ind %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+              pdma_se,pdma_data_packing,pdma_trans_type,pdma_sync_async,pdma_trace, pdma_coherent,
+              pdma_vector_len,pdma_sysram_mem_start_addr,pdma_opram_mem_start_addr,
+              pdma_opram_skip_addr,pdma_opram_continuous_addr,
+              pdma_sysram_skip_addr,pdma_sysram_continous_addr
+              );
+  }
+
+ // VMT instruction 
+/*
+vmt			in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc
+vmt.shift_sq2s2		in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_shift_value
+vmt.wr_off_sq2s2	in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_offset_value
+vmt.imm_off_sq2s2	in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_re_imdt_value, sq2s2_im_imdt_value
+vmt.vec_sq2s2		in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_vec_src
+vmt.ind			in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc
+vmt.shift_sq2s2.ind	in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_shift_value
+vmt.wr_off_sq2s2.ind	in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_offset_value
+vmt.imm_off_sq2s2.ind	in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_re_imdt_value, sq2s2_im_imdt_value
+vmt.vec_sq2s2.ind	in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 opsq2s3 vec_sz src_add, dest_add, mult_s_exp_n_val_addr, src_add_inc, dest_add_inc, sq2s2_vec_src
+*/
+  define (instrfield=mult_s_exp_n_val_addr) {
+	// VMT
+    bits = (63,48);
+  }
+
+  define (instr=vmt_) {
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1,opsq2s1,opsq2s2,opsq2s3, 
+	op_pack,ip_pack,ima_fld,vec_sz,
+	src_add,
+	dest_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc,dest_add_inc,
+	imdt_offset_val_im,
+	extra_offset_val_im
+	);
+
+    dsyntax = ("vmt %f %f %f %f %f %f %f %f vec_size=%f src=%f dest=%f mult_s_exp_n_val_addr=%f src_inc=%f dest_inc=%f %f %f",
+	in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq1,opsq2s1,opsq2s2,opsq2s3,
+	vec_sz,src_add,
+	dest_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc,dest_add_inc,
+	imdt_offset_val_im,extra_offset_val_im);
+
+    action = { };
+  }
+
+  // vmt instruction 
+  define (instr=vmt) {
+
+    width = 128;
+    alias = vmt_(rst_acc_vmt(rst_acc_vmt),in_dattyp_vmt(in_dattyp_vmt),opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(0),opsq2s3(opsq2s3),
+	op_pack(op_pack),ip_pack(ip_pack),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram_tram(src_add)),
+	dest_add(is_addr_oram_tram(dest_add)),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),
+	extra_offset_val_im(0)
+	);
+
+    syntax = ("vmt %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add, dest_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc);
+  }
+
+  // vmt instruction
+  define (instr=vmt_ind) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(0),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),extra_offset_val_im(0));
+
+    syntax = ("vmt.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc);
+  }
+
+  // vmt instruction 
+  define (instr=vmt_shift_sq2s2) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(1),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram_tram(src_add)),
+	dest_add(is_addr_oram_tram(dest_add)),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),extra_offset_val_im(extra_val));
+
+    syntax = ("vmt.shift_sq2s2 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add, dest_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc, extra_val);
+  }
+
+  // vmt instruction
+  define (instr=vmt_shift_sq2s2_ind) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(1),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),extra_offset_val_im(extra_val));
+
+    syntax = ("vmt.shift_sq2s2.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc,extra_val);
+  }
+
+  // vmt instruction 
+  define (instr=vmt_wr_off_sq2s2) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(2),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram_tram(src_add)),
+	dest_add(is_addr_oram_tram(dest_add)),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),extra_offset_val_im(extra_val));
+
+    syntax = ("vmt.wr_off_sq2s2 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add, dest_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc, extra_val);
+  }
+
+  // vmt instruction
+  define (instr=vmt_wr_off_sq2s2_ind) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(2),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),extra_offset_val_im(extra_val));
+
+    syntax = ("vmt.wr_off_sq2s2.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc,extra_val);
+  }
+
+  // vmt instruction 
+  define (instr=vmt_imm_off_sq2s2) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(3),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram_tram(src_add)),
+	dest_add(is_addr_oram_tram(dest_add)),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(extra_val),extra_offset_val_im(extra_val2));
+
+    syntax = ("vmt.imm_off_sq2s2 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add, dest_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc, extra_val,extra_val2);
+  }
+
+  // vmt instruction
+  define (instr=vmt_imm_off_sq2s2_ind) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(3),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(extra_val),extra_offset_val_im(extra_val2));
+
+    syntax = ("vmt.imm_off_sq2s2.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc,extra_val,extra_val2);
+  }
+
+ // vmt instruction 
+  define (instr=vmt_vec_sq2s2) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(4),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(0),vec_sz(vec_sz),
+	src_add(is_addr_oram_tram(src_add)),
+	dest_add(is_addr_oram_tram(dest_add)),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),extra_offset_val_im(extra_val));
+
+    syntax = ("vmt.vec_sq2s2 %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add, dest_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc, extra_val);
+  }
+
+  // vmt instruction
+  define (instr=vmt_vec_sq2s2_ind) {
+
+    width = 128;
+    alias = vmt_(in_dattyp_vmt(in_dattyp_vmt),rst_acc_vmt(rst_acc_vmt),
+	opsq1(opsq1),opsq2s1(opsq2s1),opsq2s2(4),opsq2s3(opsq2s3),op_pack(op_pack),
+	ip_pack(ip_pack),ima_fld(1),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	mult_s_exp_n_val_addr(is_addr_wr(mult_s_exp_n_val_addr)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	imdt_offset_val_im(0),extra_offset_val_im(extra_val));
+
+    syntax = ("vmt.vec_sq2s2.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+	opsq1, opsq2s1, opsq2s3,
+	vec_sz, src_add,
+	mult_s_exp_n_val_addr,
+	src_add_inc, dest_add_inc,extra_val);
+  }
+
+  // HIST instruction 
+/*
+** hist		in_dattyp2 pre_proc hist_mode bin_sz pack_en vec_sz src_add, dest_add, src_add_inc, dest_add_inc, threshold, dat_sz
+** hist.ind	in_dattyp2 pre_proc hist_mode bin_sz pack_en vec_sz src_add, 	       src_add_inc, dest_add_inc, threshold, dat_sz
+*/
+  define (instr=hist_) {
+    width = 128;
+   fields = (opcode(0x24),in_dattyp2,pre_proc,hist_mode,
+	bin_sz,ima_fld,pack_en,vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc,dest_add_inc,
+	threshold, dat_sz);
+
+    dsyntax = ("hist %p %p %p %p %p %f %f vec_size=%f src=%f dest=%f src_inc=%f dest_inc=%f %f",
+	ima_fld, in_dattyp2, pre_proc, hist_mode, bin_sz, pack_en, dat_sz, vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc,
+	threshold);
+    action = { };
+  }
+
+  // HIST instruction 
+  define (instr=hist) {
+    width = 128;
+     alias = hist_(in_dattyp2(in_dattyp2),pre_proc(pre_proc),hist_mode(hist_mode),
+	bin_sz(bin_sz),ima_fld(0),pack_en(pack_en),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(validate_addr(dest_add,1)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	threshold(threshold), dat_sz(dat_sz));
+
+    syntax = ("hist %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp2, pre_proc, hist_mode, bin_sz, pack_en,
+	dat_sz, vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc,
+	threshold);
+  }
+
+  // HIST instruction 
+  define (instr=hist_ind) {
+    width = 128;
+     alias = hist_(in_dattyp2(in_dattyp2),pre_proc(pre_proc),hist_mode(hist_mode),
+	bin_sz(bin_sz),ima_fld(1),pack_en(pack_en),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	threshold(threshold), dat_sz(dat_sz));
+
+    syntax = ("hist.ind %p %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, pre_proc, hist_mode, bin_sz, pack_en,
+	dat_sz, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc,
+	threshold);
+  }
+
+  // MAXS instruction 
+/*
+** maxs.gm		in_dattyp out_mode pre_proc                 in_pack gm_preload vec_sz src_add, dest_add, src_add_inc, dest_add_inc, gm_add
+** maxs.gm.ind		in_dattyp out_mode pre_proc                 in_pack gm_preload vec_sz src_add,           src_add_inc, dest_add_inc, gm_add
+** maxs.lm		in_dattyp out_mode pre_proc in_tag cyc_extn in_pack            vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+** maxs.lm.ind		in_dattyp out_mode pre_proc in_tag cyc_extn in_pack            vec_sz src_add,           src_add_inc, dest_add_inc
+** maxs.lm.bfld		in_dattyp          pre_proc in_tag cyc_extn in_pack            vec_sz src_add, dest_add, src_add_inc, dest_add_inc,           bitfld_size
+** maxs.lm.bfld.ind	in_dattyp          pre_proc in_tag cyc_extn in_pack            vec_sz src_add,           src_add_inc, dest_add_inc,           bitfld_size
+** maxs.lmth		in_dattyp out_mode pre_proc in_tag cyc_extn in_pack thld_mode  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+** maxs.lmth.ind	in_dattyp out_mode pre_proc in_tag cyc_extn in_pack thld_mode  vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+** maxs.lmth.bfld	in_dattyp          pre_proc in_tag cyc_extn in_pack thld_mode  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add, bitfld_size
+** maxs.lmth.bfld.ind	in_dattyp          pre_proc in_tag cyc_extn in_pack thld_mode  vec_sz src_add,           src_add_inc, dest_add_inc, thld_add, bitfld_size
+** maxs.th		in_dattyp out_mode pre_proc                 in_pack thld_mode  vec_sz src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+** maxs.th.ind		in_dattyp out_mode pre_proc                 in_pack thld_mode  vec_sz src_add,           src_add_inc, dest_add_inc, thld_add
+*/
+   define (instrfield=in_tag) {
+	// MAXS
+    bits = 116;
+    enumerated = (".no_tag_in", ".tag_in");
+  }
+
+    define (instrfield=max_mode) {
+	// MAXS
+    bits = (115, 114);
+    enumerated = (".gm", ".lm", ".lmth", ".th");
+  }
+
+    define (instrfield=cyc_extn) {
+	// MAXS
+    bits = 113;
+    enumerated = (".no_cyc_ext", ".cyc_ext");
+  }
+
+    define (instrfield=in_pack) {
+	// MAXS
+    bits = (111,110);
+    enumerated = (".in_24real", ".in_24im", ".in_48packed");
+  }
+
+    define (instrfield=maxsn_sel) {
+    // MAXS
+    bits = (17,16);
+    enumerated = (".no_maxsn", ".maxsn_16", ".maxsn_8", ".maxsn_4");
+  }
+
+    define (instrfield=gm_preload) {
+	// MAXS
+    bits = 23;
+    enumerated = (".no_preload", ".preload");
+  }
+
+    define (instrfield=thld_mode) {
+	// MAXS
+    bits = 22;
+    enumerated = (".gt_thld", ".ge_thld");
+  }
+
+    define (instrfield=out_mode) {
+	// MAXS
+    bits = (21,20);
+    enumerated = (".bfld", ".tag", ".idx");
+  }
+
+    define (instrfield=bitfld_size) {
+	// MAXS
+    bits = (19,18);
+    enumerated = (".8bits", ".16bits", ".24bits");
+  }
+
+    define (instrfield=thld_add) {
+	// MAXS, COPY
+    bits = (15,0);
+  }
+
+    define (instr=maxs_) {
+    width = 128;
+    fields = (opcode(0x27), ima_fld,
+	in_dattyp2, pre_proc, in_tag, max_mode,
+	cyc_extn, in_pack, thld_mode, gm_preload,
+	out_mode, bitfld_size, thld_add,
+	vec_sz, 
+	src_add,dest_add,
+	src_add_inc,dest_add_inc);
+
+    action = { };
+  }
+
+  int tag_type(int tag, int dattyp) {
+    if (tag && dattyp != 2)
+      error(0, "illegal type for tag, must be .log2 ", tag);
+    return tag;
+  }
+
+  // MAXS instruction 
+  define (instr=maxsGM) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(0),max_mode(0), 
+	in_tag(0), cyc_extn(0), thld_mode(0), thld_add(0), bitfld_size(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	gm_preload(gm_preload),
+	in_pack(in_pack),
+	vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(validate_addr(dest_add,1)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	thld_add(thld_add));
+
+    syntax = ("maxs.gm %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_pack, gm_preload, vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc,
+	thld_add);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsGMind) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(1),max_mode(0), 
+	in_tag(0), cyc_extn(0), thld_mode(0), thld_add(0), bitfld_size(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	gm_preload(gm_preload),
+	in_pack(in_pack),
+	vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+	thld_add(thld_add));
+
+    syntax = ("maxs.gm.ind %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_pack, gm_preload, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc,
+	thld_add);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLM) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(0),max_mode(1), 
+	thld_mode(0), thld_add(0), bitfld_size(0), gm_preload(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(validate_addr(dest_add,1)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lm %p %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_tag, cyc_extn, in_pack, vec_sz,
+	src_add, dest_add,
+	src_add_inc, dest_add_inc);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLMind) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(1),max_mode(1), 
+	thld_mode(0), thld_add(0), bitfld_size(0), gm_preload(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	src_add_inc(src_add_inc),
+	dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lm.ind %p %p %p %p %p %p %f %f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_tag, cyc_extn, in_pack, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLMbfld) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(0),max_mode(1), 
+	thld_mode(0), thld_add(0), bitfld_size(bitfld_size), gm_preload(0),
+	pre_proc(pre_proc),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(validate_addr(dest_add,1)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lm.bfld %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp2, pre_proc, in_tag, cyc_extn, in_pack, vec_sz,
+	src_add, dest_add,
+	src_add_inc, dest_add_inc,
+	bitfld_size);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLMbfldind) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(1),max_mode(1), 
+	thld_mode(0), thld_add(0), bitfld_size(bitfld_size), gm_preload(0),
+	pre_proc(pre_proc),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	src_add_inc(src_add_inc),
+	dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lm.bfld.ind %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, pre_proc, in_tag, cyc_extn, in_pack, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc,
+	bitfld_size);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLMTH) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(0),max_mode(2), 
+	thld_mode(thld_mode), thld_add(thld_add), bitfld_size(0), gm_preload(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(validate_addr(dest_add,1)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lmth %p %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_tag, cyc_extn, in_pack, thld_mode, vec_sz,
+	src_add, dest_add,
+	src_add_inc, dest_add_inc, thld_add);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLMTHind) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(1),max_mode(2), 
+	thld_mode(thld_mode), thld_add(thld_add), bitfld_size(0), gm_preload(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	src_add_inc(src_add_inc),
+	dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lmth.ind %p %p %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_tag, cyc_extn, in_pack, thld_mode, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc, thld_add);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLMTHbfld) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(0),max_mode(2), 
+	thld_mode(thld_mode), thld_add(thld_add), bitfld_size(bitfld_size), gm_preload(0),
+	pre_proc(pre_proc),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(validate_addr(dest_add,1)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lmth.bfld %p %p %p %p %p %p %f %f,%f,%f,%f,%f,%f",
+	in_dattyp2, pre_proc, in_tag, cyc_extn, in_pack, thld_mode, vec_sz,
+	src_add, dest_add,
+	src_add_inc, dest_add_inc, thld_add,
+	bitfld_size);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsLMTHbfldind) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(1),max_mode(2), 
+	thld_mode(thld_mode), thld_add(thld_add), bitfld_size(bitfld_size), gm_preload(0),
+	pre_proc(pre_proc),
+	in_tag(tag_type(in_tag,in_dattyp2)),
+        cyc_extn(cyc_extn),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	src_add_inc(src_add_inc),
+	dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.lmth.bfld.ind %p %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp2, pre_proc, in_tag, cyc_extn, in_pack, thld_mode, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc, thld_add,
+	bitfld_size);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsTH) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(0),max_mode(3),
+	thld_mode(thld_mode), thld_add(thld_add), bitfld_size(0), gm_preload(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	in_tag(0),
+        cyc_extn(0),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(validate_addr(dest_add,1)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.th %p %p %p %p %p %f %f,%f,%f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_pack, thld_mode, vec_sz,
+	src_add, dest_add,
+	src_add_inc, dest_add_inc, thld_add);
+  }
+
+  // MAXS instruction 
+  define (instr=maxsTHind) {
+    width = 128;
+     alias = maxs_(in_dattyp2(in_dattyp2),ima_fld(1),max_mode(3), 
+	thld_mode(thld_mode), thld_add(thld_add), bitfld_size(0), gm_preload(0),
+	pre_proc(pre_proc),out_mode(out_mode),
+	in_tag(0),
+        cyc_extn(0),
+	in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	src_add_inc(src_add_inc),
+	dest_add_inc(dest_add_inc));
+
+    syntax = ("maxs.th.ind %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, out_mode, pre_proc, in_pack, thld_mode, vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc, thld_add);
+  }
+
+ 
+//sort			in_dattyp pre_proc set_size in_pack 		vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+//sort.ind		in_dattyp pre_proc set_size in_pack		vec_sz src_add,           src_add_inc, dest_add_inc
+//sort.slide		in_dattyp pre_proc set_size in_pack sort_rank	vec_sz src_add, dest_add, src_add_inc, dest_add_inc
+//sort.slide.ind	in_dattyp pre_proc set_size in_pack sort_rank	vec_sz src_add,           src_add_inc, dest_add_inc
+
+  define (instrfield=set_size) {
+    bits = (17,16);
+    enumerated = (".ss4", ".ss8", ".ss16");
+    value = ".ss4";
+  }
+
+  define (instrfield=sort_type) {
+    bits = (112);
+  }
+
+  define (instrfield=sort_rank) {
+    bits = (21,18);
+  }
+
+  define (instr=sort_) {
+    width = 128;
+   fields = (opcode(0x1D),in_dattyp2,pre_proc,set_size,ima_fld,
+	in_pack, sort_rank, vec_sz, sort_type,
+	src_add, dest_add,
+	src_add_inc,dest_add_inc);
+
+    action = { };
+  }
+
+  // SORT instruction 
+  define (instr=sort) {
+    width = 128;
+     alias = sort_(in_dattyp2(in_dattyp2),pre_proc(pre_proc),ima_fld(0),sort_type(0),
+	set_size(set_size),sort_rank(0),in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("sort %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, pre_proc, set_size,
+	in_pack,vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc);
+  }
+ 
+  // SORT instruction 
+  define (instr=sort_ind) {
+    width = 128;
+     alias = sort_(in_dattyp2(in_dattyp2),pre_proc(pre_proc),ima_fld(1),sort_type(0),
+	set_size(set_size),sort_rank(0),in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("sort.ind %p %p %p %p %f %f,%f,%f",
+	in_dattyp2, pre_proc, set_size,
+	in_pack,vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc);
+  }
+ 
+  // SORT instruction 
+  define (instr=sort_slide) {
+    width = 128;
+     alias = sort_(in_dattyp2(in_dattyp2),pre_proc(pre_proc),ima_fld(0),sort_type(1),
+	set_size(set_size),sort_rank(sort_rank),in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_oram(src_add)),
+	dest_add(is_addr_oram(dest_add)),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("sort.slide %p %p %p %p %p %f %f,%f,%f,%f",
+	in_dattyp2, pre_proc, set_size,
+	in_pack, sort_rank, vec_sz,
+	src_add,
+	dest_add,
+	src_add_inc, dest_add_inc);
+  }
+ 
+  // SORT instruction 
+  define (instr=sort_slide_ind) {
+    width = 128;
+     alias = sort_(in_dattyp2(in_dattyp2),pre_proc(pre_proc),ima_fld(1),sort_type(1),
+	set_size(set_size),sort_rank(sort_rank),in_pack(in_pack),vec_sz(vec_sz),
+	src_add(is_addr_wr(src_add)),
+	dest_add(0),
+	src_add_inc(src_add_inc),dest_add_inc(dest_add_inc));
+
+    syntax = ("sort.slide.ind %p %p %p %p %p %f %f,%f,%f",
+	in_dattyp2, pre_proc, set_size,
+	in_pack,sort_rank,vec_sz,
+	src_add,
+	src_add_inc, dest_add_inc);
+  }
+}
+
+define (core=SPT) {
+  archs = SPT;
+  instr_endianness = little;
+  data_endianness = little;
+  bit_endianness = little;
+  }

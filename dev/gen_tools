@@ -1,0 +1,3 @@
+sudo adl2asm --asm --dis --no-a2l --no-ld --no-dbg --static --verbose --log-usage=no --asm-ver=8.17 spt-GM.adl 
+sudo adl2asm --asm --dis --no-a2l --no-ld --no-dbg --static --verbose --log-usage=no --asm-ver=8.17 spt2-GM.adl 
+sudo adl2asm --asm --dis --no-a2l --no-ld --no-dbg --static --verbose --log-usage=no --asm-ver=8.18 spt2.5-GM.adl 
