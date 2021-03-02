@@ -1,0 +1,53 @@
+/*
+ * Copyright 2018-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+#include "spt3_addr.adl"
+#include "spt3_alu.adl"
+#include "spt3_cmds.adl"
+#include "spt3_fft.adl"
+#include "spt3_fftb.adl"
+#include "spt3_hist.adl"
+#include "spt3_sort.adl"
+#include "spt3_sortb.adl"
+#include "spt3_vmt.adl"
+#include "spt3_copy.adl"
+#include "spt3_copyb.adl"
+
+define (core=spt3) {
+
+  archs = (spt3_addressing, spt3_alu, spt3_cmds,spt3_fft,spt3_fftb,spt3_hist,spt3_sort,spt3_sortb,spt3_vmt,spt3_copy,spt3_copyb);
+  instr_endianness = little;
+  data_endianness = little;
+  bit_endianness = little;
+  
+  define (assembler) {
+	  comments=(";");
+	  line_comments=(";","#");
+	  symbol_chars = ("#");
+	  arg_separators=(",");
+  }
+
+  //
+  // Relocations.
+  //
+
+  // 32-bit address relocation in data for ARM
+  define (reloc=R_ARM_ABS32) {
+        value = 2;
+        bfd_code = 2;
+        offset = 0;
+        pcrel = false;
+        field_width = 32;
+        }
+
+  // 64-bit address relocation in data for AARCH64
+  define (reloc=R_AARCH64_ABS64) {
+        value = 257;
+        bfd_code = 1;
+        offset = 0;
+        pcrel = false;
+        field_width = 64;
+        }
+}
