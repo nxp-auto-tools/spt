@@ -1,0 +1,392 @@
+/*
+ * Copyright 2018-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt3_addressing) {
+
+#define WRAM 0
+#define TRAM 1
+#define ORAM 2
+#define SPRAM 3
+
+  define (reg=wr_0) { } /*0x0000*/
+  define (reg=wr_1) { } /*0x0001*/
+  define (reg=wr_2) { } /*0x0002*/
+  define (reg=wr_3) { } /*0x0003*/
+  define (reg=wr_4) { } /*0x0004*/
+  define (reg=wr_5) { } /*0x0005*/
+  define (reg=wr_6) { } /*0x0006*/
+  define (reg=wr_7) { } /*0x0007*/
+  define (reg=wr_8) { } /*0x0008*/
+  define (reg=wr_9) { } /*0x0009*/
+  define (reg=wr_10) { } /*0x000A*/
+  define (reg=wr_11) { } /*0x000B*/
+  define (reg=wr_12) { } /*0x000C*/
+  define (reg=wr_13) { } /*0x000D*/
+  define (reg=wr_14) { } /*0x000E*/
+  define (reg=wr_15) { } /*0x000F*/
+  define (reg=wr_16) { } /*0x0010*/
+  define (reg=wr_17) { } /*0x0011*/
+  define (reg=wr_18) { } /*0x0012*/
+  define (reg=wr_19) { } /*0x0013*/
+  define (reg=wr_20) { } /*0x0014*/
+  define (reg=wr_21) { } /*0x0015*/
+  define (reg=wr_22) { } /*0x0016*/
+  define (reg=wr_23) { } /*0x0017*/
+  define (reg=wr_24) { } /*0x0018*/
+  define (reg=wr_25) { } /*0x0019*/
+  define (reg=wr_26) { } /*0x001a*/
+  define (reg=wr_27) { } /*0x001b*/
+  define (reg=wr_28) { } /*0x001c*/
+  define (reg=wr_29) { } /*0x001d*/
+  define (reg=wr_30) { } /*0x001e*/
+  define (reg=wr_31) { } /*0x001f*/
+  define (reg=wr_32) { } /*0x0020*/
+  define (reg=wr_33) { } /*0x0021*/
+  define (reg=wr_34) { } /*0x0022*/
+  define (reg=wr_35) { } /*0x0023*/
+  define (reg=wr_36) { } /*0x0024*/
+  define (reg=wr_37) { } /*0x0025*/
+  define (reg=wr_38) { } /*0x0026*/
+  define (reg=wr_39) { } /*0x0027*/
+  define (reg=wr_40) { } /*0x0028*/
+  define (reg=wr_41) { } /*0x0029*/
+  define (reg=wr_42) { } /*0x002a*/
+  define (reg=wr_43) { } /*0x002b*/
+  define (reg=wr_44) { } /*0x002c*/
+  define (reg=wr_45) { } /*0x002d*/
+  define (reg=wr_46) { } /*0x002e*/
+  define (reg=wr_47) { } /*0x002f*/
+  define (reg=spr_0) { } /*0x1000*/
+  define (reg=spr_1) { } /*0x1001*/
+  define (reg=spr_2) { } /*0x1002*/
+  define (reg=spr_3) { } /*0x1003*/
+  define (reg=spr_4) { } /*0x1004*/
+  define (reg=spr_5) { } /*0x1005*/
+  define (reg=spr_6) { } /*0x1006*/
+  define (reg=spr_7) { } /*0x1007*/
+  define (reg=spr_8) { } /*0x1008*/
+  define (reg=spr_9) { } /*0x1009*/
+  define (reg=hw_spr_0) { } /*0x1010*/
+  define (reg=hw_spr_1) { } /*0x1011*/
+  define (reg=hw_spr_2) { } /*0x1012*/
+  define (reg=hw_spr_3) { } /*0x1013*/
+  define (reg=hw_spr_4) { } /*0x1014*/
+  define (reg=hw_spr_5) { } /*0x1015*/
+  define (reg=evt_spr_0) { } /*0x1016*/
+  define (reg=evt_spr_1) { } /*0x1017*/
+  define (reg=evt_spr_2) { } /*0x1018*/
+  define (reg=evt_spr_3) { } /*0x1019*/
+  define (reg=evt_spr_4) { } /*0x101a*/
+  define (reg=evt_spr_5) { } /*0x101b*/
+  define (reg=evt_spr_6) { } /*0x101c*/
+  define (reg=evt_spr_7) { } /*0x101d*/
+  define (reg=evt_spr_8) { } /*0x101e*/
+  define (reg=evt_spr_9) { } /*0x101f*/
+  define (reg=chrp_spr_0) { } /*0x1020*/
+  define (reg=chrp_spr_1) { } /*0x1021*/
+  define (reg=chrp_spr_2) { } /*0x1022*/
+  define (reg=chrp_spr_3) { } /*0x1023*/
+  define (reg=chrp_spr_4) { } /*0x1024*/
+  define (reg=chrp_spr_5) { } /*0x1025*/
+  define (reg=chrp_spr_6) { } /*0x1026*/
+  define (reg=chrp_spr_7) { } /*0x1027*/
+
+  define (instrfield=immed_or_reg_src_fld) {
+
+    bits = 121;
+    enumerated = (".immed",("",".reg"));
+  }
+
+  define (reg=PC) {
+    attrs = (nia,cia);
+  }
+
+  define (instrfield=opcode) {
+    bits = (127,122);
+  }
+
+  define (instrfield=ima_fld) {
+    bits = 109;
+    enumerated = (".imm",".ind");
+    value = ".imm";
+  }
+
+  define (instrfield=src_add) {
+    bits = (95, 80);
+  }
+
+  define (instrfield=any_src_add_reg) {
+    pseudo=true;
+    size = 16;
+	enumerated = (
+#include "sptregs.h"
+	);
+  }
+
+  define (instrfield=src_add_reg) {
+    pseudo=true;
+    size = 16;
+	enumerated = (
+#include "wr3"
+	);
+  }
+
+  define (instrfield=dest_add) {
+    bits = (79, 64);
+  }
+
+  define (instrfield=any_dest_add_reg) {
+    pseudo=true;
+    size = 16;
+	enumerated = (
+#include "sptregs.h"
+	);
+  }
+
+  define (instrfield=dest_add_reg) {
+    pseudo=true;
+    size = 16;
+	enumerated = (
+#include "wr3"
+	);
+  }
+
+  define (instrfield=src2_add) {
+    bits = (63, 48);
+  }
+
+  define (instrfield=any_src2_add_reg) {
+    pseudo=true;
+    size = 16;
+	enumerated = (
+#include "sptregs.h"
+	);
+  }
+
+  define (instrfield=src2_add_reg) {
+    pseudo=true;
+    size = 16;
+	enumerated = (
+#include "wr3"
+	);
+  }
+
+  define (instrfield=imm_dat) {
+    bits = (47,0);
+    type = immed;
+    is_signed = true;
+    unsigned_upper_bound = true;
+  }
+
+  define (instrfield=mem) {
+  	pseudo=true;
+  	width=2;
+  	enumerated = ("wr","tr","or","spr");
+  }
+  
+  define (instrfield=bank) {
+  	pseudo=true;
+  	width=2;
+  	valid_ranges = (0,3);
+  }
+  
+  define (instrfield=column) {
+  	pseudo=true;
+  	width=9;
+  	display=dec;
+  	valid_ranges = (0,511);
+  }
+  
+  define (instrfield=slice) {
+        pseudo=true;
+        width=6;
+        display=dec;
+        valid_ranges = (0,47);
+  }
+  
+  define (instrfield=mem1) {
+  	pseudo=true;
+  	width=2;
+  	enumerated = ("wr","tr","or","spr");
+  }
+  
+  define (instrfield=bank1) {
+  	pseudo=true;
+  	width=2;
+  	valid_ranges = (0,3);
+  }
+  
+  define (instrfield=column1) {
+  	pseudo=true;
+  	width=9;
+  	display=dec;
+  	valid_ranges = (0,511);
+  }
+  
+  define (instrfield=slice1) {
+        pseudo=true;
+        width=6;
+        display=dec;
+        valid_ranges = (0,47);
+  }
+
+  define (instrfield=mem2) {
+  	pseudo=true;
+  	width=2;
+  	enumerated = ("wr","tr","or","spr");
+  }
+  
+  define (instrfield=bank2) {
+  	pseudo=true;
+  	width=2;
+  	valid_ranges = (0,3);
+  }
+  
+  define (instrfield=column2) {
+  	pseudo=true;
+  	width=9;
+  	display=dec;
+  	valid_ranges = (0,511);
+  }
+  
+  define (instrfield=slice2) {
+        pseudo=true;
+        width=6;
+        display=dec;
+        valid_ranges = (0,47);
+  }
+
+   define (instrfield=mem3) {
+  	pseudo=true;
+  	width=2;
+  	enumerated = ("wr","tr","or","spr");
+  }
+  
+  define (instrfield=bank3) {
+  	pseudo=true;
+  	width=2;
+  	valid_ranges = (0,3);
+  }
+  
+  define (instrfield=column3) {
+  	pseudo=true;
+  	width=9;
+  	display=dec;
+  	valid_ranges = (0,511);
+  }
+  
+  define (instrfield=slice3) {
+        pseudo=true;
+        width=6;
+        display=dec;
+        valid_ranges = (0,47);
+  }
+
+  unsigned translateM (unsigned m, unsigned b, unsigned c, unsigned s) {
+        if ((m == TRAM) || (m == ORAM)) {
+            if (b >= 4) error(0, "illegal memory bank: 0x", hex, b);
+            if (s >= 16) error(0, "illegal memory slice: 0x", hex, s);
+        }
+  	if (m == TRAM) {
+            if (c >= 256)
+                error(0, "illegal Twiddle RAM column: 0x", hex, c);
+            return 0x4000 | (b << 12) | (c << 4) | s;
+        } else if (m == ORAM) {
+            if (c >= 512)
+                error(0, "illegal Operand RAM column: 0x", hex, c);
+            return 0x8000 | (b << 13) | (c << 4) | s;
+        } else if (m == SPRAM) {
+            unsigned spr = 0x1000 | s;
+            if (((0x1009 < spr) && (spr < 0x1010)) || (0x1027 < spr))
+                error(0, "illegal Special Purpose Register: 0x", hex, s);
+            return spr;
+        } else {
+            if (s > 47)
+                error(0, "illegal Work Register: 0x", hex, s);
+            return s;
+        }
+  }
+
+  unsigned translateR (unsigned r) {
+	return r;
+  }
+
+  unsigned decode_mem(unsigned addr) {
+  	if (addr & 0xc000) return (addr & 0x8000) ? 2 : 1;
+	else if (addr & 0x1000) return 3;
+	else return 0;
+    }
+
+  unsigned decode_bank(unsigned addr) {
+	if (addr & 0xc000)
+		return (addr & 0x8000) ? ((addr >> 13) & 0x3) : ((addr >> 12) & 0x3);
+	return 0;
+    }
+
+  unsigned decode_column(unsigned addr) {
+	if (addr & 0xc000)
+		return (addr & 0x8000) ? ((addr >> 4) & 0x1ff) : ((addr >> 4) & 0xff);
+	return 0;
+    }
+
+  unsigned decode_slice(unsigned addr) {
+	return (addr & 0xc000) ? (addr & 0xf) : (addr & 0x3f);
+    }
+
+  unsigned chk_size(unsigned sz) {
+	if (sz > 8192)
+		error(0, "illegal vector size: ", sz);
+	return sz;
+    }
+
+  unsigned get_mode ( unsigned x ) {
+       return x >> 14 ;
+  }
+
+  unsigned is_addr_oram(unsigned x) {
+	unsigned wr = x;
+	if (get_mode(x) < 2)
+		error(0, "illegal Operand RAM: 0x", hex, wr);
+	return x;
+  }
+
+  unsigned is_addr_wr(unsigned x) {
+	unsigned wr = x;
+	if (x > 47)
+		error(0, "illegal Work Register: 0x", hex, wr);
+	return x;
+  }
+
+  unsigned is_addr_wr_spr(unsigned x) {
+	unsigned wr = x;
+	if (47 < x && x < 0x1000)
+		error(0, "illegal Work Register: 0x", hex, wr);
+	if (0x1009 < x && x < 0x1010 || 0x1027 < x)
+		error(0, "illegal Special Purpose Register: 0x", hex, wr);
+	return x;
+  }
+
+  unsigned is_addr_tram(unsigned x) {
+	unsigned wr = x;
+	if (!(get_mode(x) & 1))
+		error(0, "illegal Twiddle RAM: 0x", hex, wr);
+	return x;
+  }
+
+  unsigned is_addr_oram_tram(unsigned x) {
+	unsigned md = get_mode(x);
+	if (md == 0)
+		error(0, "illegal Operand or Twiddle RAM: 0x", hex, x);
+	return x;
+  }
+
+  unsigned is_addr_tram_wr(unsigned x) {
+	unsigned md = get_mode(x);
+	if (md != 0 && md != 1)
+		error(0, "illegal Twiddle RAM or Work Register: 0x", hex, x);
+	return x;
+  }
+
+ }

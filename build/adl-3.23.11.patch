@@ -1,0 +1,436 @@
+diff --git a/ChangeLog b/ChangeLog
+index 69599d819..7168d0e18 100755
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,35 @@
++2021-02-04  Brian Kahne  <nxa13069@apc1033.nxdi.us-cdc01.nxp.com>
++
++	** Default behavior for the acb_parse_expr callback (the parse
++	expression callback routine for assemblers) is now to check if any
++	text is left over in an argument after expression parsing, and
++	report an error if there is.  This is used to catch bad input
++	which starts with digits, e.g. <i>47lalalala</i>, which would
++	previously parse without an error.
++
++	* Added asm144.s with as-mod100 to test.
++
++       == file:///proj/.ppc_43/vc_noec/git/adl release 3.24.0 (v3_24_0) on Linux (apc2265.nxdi.us-cdc01.nxp.com) on 2/1/2021 ==
++
++       == file:///proj/.ppc_43/vc_noec/git/adl release 3.24.0 (v3_24_0) on Linux (apc2387.nxdi.us-cdc01.nxp.com) on 2/1/2021 ==
++
++2021-01-27  Brian Kahne  <nxa13069@apc1033.nxdi.us-cdc01.nxp.com>
++
++	** Added in various fixes for binutils builds on Windows.
++
++       == file:///proj/.ppc_43/vc_noec/git/adl release 3.23.12 (v3_23_12) on Linux (apc2525.nxdi.us-cdc01.nxp.com) on 1/15/2021 ==
++
++       == file:///proj/.ppc_43/vc_noec/git/adl release 3.23.12 (v3_23_12) on Linux (apc2265.nxdi.us-cdc01.nxp.com) on 1/15/2021 ==
++
++2021-01-15  Brian Kahne  <nxa13069@apc1029.nxdi.us-cdc01.nxp.com>
++
++	** The <b>exec_from_buffer</b> function is now available within a
++	model, which allows for execution of instructions from a specified
++	buffer.  This can be used, for example, to implement a debug mode,
++	in which the model executes from a special program buffer.
++
++       == file:///proj/.ppc_43/vc_noec/git/adl release 3.23.11 (v3_23_11) on Linux (apc2168.nxdi.us-cdc01.nxp.com) on 11/2/2020 ==
++
+        == file:///proj/.ppc_43/vc_noec/git/adl release 3.23.11 (v3_23_11) on Linux (apc2063.nxdi.us-cdc01.nxp.com) on 11/2/2020 ==
+ 
+ 2020-11-02  Brian Kahne  <nxa13069@apc2437.nxdi.us-cdc01.nxp.com>
+diff --git a/external/binutils-adl/gas/adl-asm-impl-gas.C b/external/binutils-adl/gas/adl-asm-impl-gas.C
+index 4db5d2aea..404bc47d0 100755
+--- a/external/binutils-adl/gas/adl-asm-impl-gas.C
++++ b/external/binutils-adl/gas/adl-asm-impl-gas.C
+@@ -102,7 +102,7 @@ segT parse_expr(expressionS *ex, char* arg,int len,bool &unresolved)
+   if (ex->X_op == O_symbol) {
+     symbolS* symbol = symbol_find(arg);
+     unresolved = ((symbol == NULL) || (symbol->sy_flags.sy_resolved == 0));
+-  }
++  } 
+ 
+   // Now restore input_line_pointer.
+   arg[len] = backup;
+@@ -688,7 +688,16 @@ void __attribute__((weak)) acb_alloc_instr_buf(adl::InstrInfo & ATTRIBUTE_UNUSED
+ #if _MSC_VER && !_TARGET_HAS_PARSE_EXPR_ || !_MSC_VER
+ segT __attribute__((weak)) acb_parse_expr(expressionS *ex,const char *arg)
+ {
+-  return expression(ex);
++  segT seg = expression(ex);
++
++  if ((ex->X_op == O_constant) && *input_line_pointer) {
++    // A well formed expression after successful parsing will return an empty
++    // 'input_line_pointer'. Thus a constant expression with left overs is an
++    // illegal operand. So flag it.
++    ex->X_op = O_illegal;
++  }
++  
++  return seg;
+ }
+ #endif
+ 
+diff --git a/external/binutils-adl/gas/po/gas.pot b/external/binutils-adl/gas/po/gas.pot
+index 9ec473efe..43f6751ed 100644
+--- a/external/binutils-adl/gas/po/gas.pot
++++ b/external/binutils-adl/gas/po/gas.pot
+@@ -8,7 +8,7 @@ msgid ""
+ msgstr ""
+ "Project-Id-Version: PACKAGE VERSION\n"
+ "Report-Msgid-Bugs-To: \n"
+-"POT-Creation-Date: 2020-11-02 09:50-0700\n"
++"POT-Creation-Date: 2021-02-04 10:38-0700\n"
+ "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+ "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+ "Language-Team: LANGUAGE <LL@li.org>\n"
+diff --git a/external/binutils-adl/win-build/bfd/bfd-in3.h b/external/binutils-adl/win-build/bfd/bfd-in3.h
+index 6945bb7fe..113f29110 100644
+--- a/external/binutils-adl/win-build/bfd/bfd-in3.h
++++ b/external/binutils-adl/win-build/bfd/bfd-in3.h
+@@ -2283,6 +2283,7 @@ enum bfd_architecture
+ #define bfd_mach_aarch64_ilp32 32
+   bfd_arch_nios2,
+ #define bfd_mach_nios2 0
++  bfd_arch_adl,       /* ADL generated architecture */
+   bfd_arch_last
+   };
+ 
+diff --git a/external/binutils-adl/win-build/bfd/bfd.h b/external/binutils-adl/win-build/bfd/bfd.h
+index 5693ac82d..99dc6daf4 100644
+--- a/external/binutils-adl/win-build/bfd/bfd.h
++++ b/external/binutils-adl/win-build/bfd/bfd.h
+@@ -88,8 +88,14 @@ extern "C" {
+ /* The word size of the default bfd target.  */
+ #define BFD_DEFAULT_TARGET_SIZE 64
+ 
++#if defined (_WIN32)
++#define BFD_HOST_64BIT_LONG 0
++#define BFD_HOST_64BIT_LONG_LONG 1
++#else
+ #define BFD_HOST_64BIT_LONG 1
+ #define BFD_HOST_64BIT_LONG_LONG 0
++#endif
++
+ #if 1
+ #define BFD_HOST_64_BIT long long
+ #define BFD_HOST_U_64_BIT unsigned long long
+diff --git a/external/binutils-adl/win-build/bfd/config.h b/external/binutils-adl/win-build/bfd/config.h
+index 2662202f1..7586e4eec 100644
+--- a/external/binutils-adl/win-build/bfd/config.h
++++ b/external/binutils-adl/win-build/bfd/config.h
+@@ -60,6 +60,10 @@
+    */
+ #define HAVE_DECL_STPCPY 0
+ 
++/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRNLEN 1
++
+ /* Define to 1 if you have the declaration of `strstr', and to 0 if you don't.
+    */
+ #define HAVE_DECL_STRSTR 1
+@@ -275,19 +279,19 @@
+ #define PACKAGE_BUGREPORT ""
+ 
+ /* Define to the full name of this package. */
+-#define PACKAGE_NAME ""
++#define PACKAGE_NAME "bfd"
+ 
+ /* Define to the full name and version of this package. */
+-#define PACKAGE_STRING ""
++#define PACKAGE_STRING "bfd 2.25"
+ 
+ /* Define to the one symbol short name of this package. */
+-#define PACKAGE_TARNAME ""
++#define PACKAGE_TARNAME "bfd"
+ 
+ /* Define to the home page for this package. */
+ #define PACKAGE_URL ""
+ 
+ /* Define to the version of this package. */
+-#define PACKAGE_VERSION ""
++#define PACKAGE_VERSION "2.25"
+ 
+ /* The size of `char', as computed by sizeof. */
+ /* #undef SIZEOF_CHAR */
+@@ -308,7 +312,11 @@
+ /* #undef SIZEOF_SHORT */
+ 
+ /* The size of `void *', as computed by sizeof. */
++#if _WIN64
++#define SIZEOF_VOID_P 8
++#else
+ #define SIZEOF_VOID_P 4
++#endif
+ 
+ /* Define to 1 if you have the ANSI C header files. */
+ #define STDC_HEADERS 1
+@@ -364,7 +372,7 @@
+ 
+ 
+ /* Version number of package */
+-#define VERSION "2.21.1"
++#define VERSION "2.25"
+ 
+ /* Number of bits in a file offset, on hosts where this is settable. */
+ /* #undef _FILE_OFFSET_BITS */
+@@ -381,7 +389,3 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ /* #undef _POSIX_SOURCE */
+-
+-/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
+-   don't. */
+-#define HAVE_DECL_STRNLEN 1
+diff --git a/external/binutils-adl/win-build/bfd/elf32-target.h b/external/binutils-adl/win-build/bfd/elf32-target.h
+index a33948206..e7f6cd8d4 100644
+--- a/external/binutils-adl/win-build/bfd/elf32-target.h
++++ b/external/binutils-adl/win-build/bfd/elf32-target.h
+@@ -798,11 +798,12 @@ static struct elf_backend_data elf32_bed =
+ 
+ /* Forward declaration for use when initialising alternative_target field.  */
+ #ifdef TARGET_LITTLE_SYM
+-extern const bfd_target TARGET_LITTLE_SYM;
++extern bfd_target TARGET_LITTLE_SYM;
+ #endif
+ 
+ #ifdef TARGET_BIG_SYM
+-const bfd_target TARGET_BIG_SYM =
++// Hack:  Non-const so that I can update this in the ADL generated objdump.
++bfd_target TARGET_BIG_SYM =
+ {
+   /* name: identify kind of target */
+   TARGET_BIG_NAME,
+@@ -900,7 +901,8 @@ const bfd_target TARGET_BIG_SYM =
+ #endif
+ 
+ #ifdef TARGET_LITTLE_SYM
+-const bfd_target TARGET_LITTLE_SYM =
++// Hack:  Non-const so that I can update this in the ADL generated objdump.
++bfd_target TARGET_LITTLE_SYM =
+ {
+   /* name: identify kind of target */
+   TARGET_LITTLE_NAME,
+diff --git a/external/binutils-adl/win-build/bfd/elf64-target.h b/external/binutils-adl/win-build/bfd/elf64-target.h
+index f30847502..8a2959370 100644
+--- a/external/binutils-adl/win-build/bfd/elf64-target.h
++++ b/external/binutils-adl/win-build/bfd/elf64-target.h
+@@ -798,11 +798,12 @@ static struct elf_backend_data elf64_bed =
+ 
+ /* Forward declaration for use when initialising alternative_target field.  */
+ #ifdef TARGET_LITTLE_SYM
+-extern const bfd_target TARGET_LITTLE_SYM;
++extern bfd_target TARGET_LITTLE_SYM;
+ #endif
+ 
+ #ifdef TARGET_BIG_SYM
+-const bfd_target TARGET_BIG_SYM =
++// Hack:  Non-const so that I can update this in the ADL generated objdump.
++bfd_target TARGET_BIG_SYM =
+ {
+   /* name: identify kind of target */
+   TARGET_BIG_NAME,
+@@ -900,7 +901,8 @@ const bfd_target TARGET_BIG_SYM =
+ #endif
+ 
+ #ifdef TARGET_LITTLE_SYM
+-const bfd_target TARGET_LITTLE_SYM =
++// Hack:  Non-const so that I can update this in the ADL generated objdump.
++bfd_target TARGET_LITTLE_SYM =
+ {
+   /* name: identify kind of target */
+   TARGET_LITTLE_NAME,
+diff --git a/external/binutils-adl/win-build/binutils/config.h b/external/binutils-adl/win-build/binutils/config.h
+index fa43db250..11029ba31 100644
+--- a/external/binutils-adl/win-build/binutils/config.h
++++ b/external/binutils-adl/win-build/binutils/config.h
+@@ -56,6 +56,10 @@
+    */
+ #define HAVE_DECL_STPCPY 0
+ 
++/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRNLEN 1
++
+ /* Define to 1 if you have the declaration of `strstr', and to 0 if you don't.
+    */
+ #define HAVE_DECL_STRSTR 1
+@@ -162,19 +166,19 @@
+ #define PACKAGE_BUGREPORT ""
+ 
+ /* Define to the full name of this package. */
+-#define PACKAGE_NAME ""
++#define PACKAGE_NAME "binutils"
+ 
+ /* Define to the full name and version of this package. */
+-#define PACKAGE_STRING ""
++#define PACKAGE_STRING "binutils 2.25"
+ 
+ /* Define to the one symbol short name of this package. */
+-#define PACKAGE_TARNAME ""
++#define PACKAGE_TARNAME "binutils"
+ 
+ /* Define to the home page for this package. */
+ #define PACKAGE_URL ""
+ 
+ /* Define to the version of this package. */
+-#define PACKAGE_VERSION ""
++#define PACKAGE_VERSION "2.25"
+ 
+ /* If using the C implementation of alloca, define if you know the
+    direction of stack growth for your system; otherwise it will be
+@@ -188,7 +192,7 @@
+ #define STDC_HEADERS 1
+ 
+ /* Configured target name. */
+-#define TARGET "powerpc-unknown-elf64"
++#define TARGET "adl-unknown-elf64"
+ 
+ /* Define to 1 if user symbol names have a leading underscore, 0 if not. */
+ #define TARGET_PREPENDS_UNDERSCORE 0
+@@ -219,7 +223,7 @@
+ 
+ 
+ /* Version number of package */
+-#define VERSION "2.21.1"
++#define VERSION "2.25"
+ 
+ /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+    `char[]'. */
+@@ -243,7 +247,3 @@
+ 
+ /* Define to `unsigned int' if <sys/types.h> does not define. */
+ /* #undef size_t */
+-
+-/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
+-   don't. */
+-#define HAVE_DECL_STRNLEN 1
+diff --git a/external/binutils-adl/win-build/gas/config.h b/external/binutils-adl/win-build/gas/config.h
+index a54143690..e45b49e28 100644
+--- a/external/binutils-adl/win-build/gas/config.h
++++ b/external/binutils-adl/win-build/gas/config.h
+@@ -191,19 +191,19 @@
+ #define PACKAGE_BUGREPORT ""
+ 
+ /* Define to the full name of this package. */
+-#define PACKAGE_NAME ""
++#define PACKAGE_NAME "gas"
+ 
+ /* Define to the full name and version of this package. */
+-#define PACKAGE_STRING ""
++#define PACKAGE_STRING "gas 2.25"
+ 
+ /* Define to the one symbol short name of this package. */
+-#define PACKAGE_TARNAME ""
++#define PACKAGE_TARNAME "gas"
+ 
+ /* Define to the home page for this package. */
+ #define PACKAGE_URL ""
+ 
+ /* Define to the version of this package. */
+-#define PACKAGE_VERSION ""
++#define PACKAGE_VERSION "2.25"
+ 
+ /* Define if defaulting to ELF on SCO 5. */
+ /* #undef SCO_ELF */
+@@ -223,16 +223,16 @@
+ /* #undef STRICTCOFF */
+ 
+ /* Target alias. */
+-#define TARGET_ALIAS "ppc-elf64"
++#define TARGET_ALIAS "adl-elf64"
+ 
+ /* Define as 1 if big endian. */
+ #define TARGET_BYTES_BIG_ENDIAN 1
+ 
+ /* Canonical target. */
+-#define TARGET_CANONICAL "powerpc-unknown-elf64"
++#define TARGET_CANONICAL "adl-unknown-elf64"
+ 
+ /* Target CPU. */
+-#define TARGET_CPU "powerpc"
++#define TARGET_CPU "adl"
+ 
+ /* Target OS. */
+ #define TARGET_OS "elf64"
+@@ -281,7 +281,7 @@
+ /* #undef USING_CGEN */
+ 
+ /* Version number of package */
+-#define VERSION "2.21.1"
++#define VERSION "2.25"
+ 
+ /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+    significant byte first (like Motorola and SPARC, unlike Intel). */
+diff --git a/external/binutils-adl/win-build/opcodes/config.h b/external/binutils-adl/win-build/opcodes/config.h
+index c7bf024aa..1165f3bbb 100644
+--- a/external/binutils-adl/win-build/opcodes/config.h
++++ b/external/binutils-adl/win-build/opcodes/config.h
+@@ -61,19 +61,19 @@
+ #define PACKAGE_BUGREPORT ""
+ 
+ /* Define to the full name of this package. */
+-#define PACKAGE_NAME ""
++#define PACKAGE_NAME "opcodes"
+ 
+ /* Define to the full name and version of this package. */
+-#define PACKAGE_STRING ""
++#define PACKAGE_STRING "opcodes 2.25"
+ 
+ /* Define to the one symbol short name of this package. */
+-#define PACKAGE_TARNAME ""
++#define PACKAGE_TARNAME "opcodes"
+ 
+ /* Define to the home page for this package. */
+ #define PACKAGE_URL ""
+ 
+ /* Define to the version of this package. */
+-#define PACKAGE_VERSION ""
++#define PACKAGE_VERSION "2.25"
+ 
+ /* Define to 1 if you have the ANSI C header files. */
+ #define STDC_HEADERS 1
+@@ -101,7 +101,7 @@
+ 
+ 
+ /* Version number of package */
+-#define VERSION "2.21.1"
++#define VERSION "2.25"
+ 
+ /* Define to 1 if on MINIX. */
+ /* #undef _MINIX */
+diff --git a/tests/iss/asm144.regress b/tests/iss/asm144.regress
+new file mode 100644
+index 000000000..d9c01f865
+--- /dev/null
++++ b/tests/iss/asm144.regress
+@@ -0,0 +1,3 @@
++asm144.s: Assembler messages:
++asm144.s:6: Error: Bad expression for operand 3: 47lalalalala
++asm144.s:6: Error: Operand 2:  illegal operand
+diff --git a/tests/iss/asm144.s b/tests/iss/asm144.s
+new file mode 100644
+index 000000000..f372f6d6e
+--- /dev/null
++++ b/tests/iss/asm144.s
+@@ -0,0 +1,6 @@
++	//
++	// This starts at 0x80, so that combined with our modification to the
++	// disassembler (via a disassembler library), we'll see these extra zeroes.
++	//
++	.org 0x80
++	addi a0,a0,47lalalalala
+diff --git a/tests/iss/regress b/tests/iss/regress
+index 030b7079a..582dce60c 100755
+--- a/tests/iss/regress
++++ b/tests/iss/regress
+@@ -529,7 +529,9 @@ if ($lang_frontend) {
+ 
+ 		  asm_test(as => "as-mod100", of => "objdump-mod100", sf => "$src/asm136.s", rf => "$src/asm136.regress"),
+ 
+-		  asm_test(as => "as-mod100", of => "objdump-mod100", sf => "$src/asm143.s", rf => "$src/asm143.regress"),		  		  
++		  asm_test(as => "as-mod100", of => "objdump-mod100", sf => "$src/asm143.s", rf => "$src/asm143.regress"),
++
++		  asm_test(as => "as-mod100", of => "objdump-mod100", sf => "$src/asm144.s", rf => "$src/asm144.regress", fail => 1),
+ 		  
+ 		  asm_test(as => "as-mod101", of => "objdump-mod101", ld => "ld-mod101 --oformat=elf32-powerpcle",      sf => "$src/asm88.s",  rf => "$src/asm88-le.regress"),
+ 

@@ -1,0 +1,832 @@
+/*
+ * Copyright 2018-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt3_cmds) {
+
+define (reloc=R_AARCH64_ABS32) {
+	// PDMA relocation
+	value=258;
+	pcrel=false;
+	instrfield = sysram_mem_start_addr;
+	}
+
+define (reloc=R_ARM_ABS32_NOI) {
+	// PDMA relocation
+	value=55;
+	pcrel=false;
+	instrfield = sysram_mem_start_addr;
+	}
+
+define (reloc=R_AARCH64_PREL32) {
+	// JUMP relocation
+	value=261;
+	offset=32;
+	pcrel=true;
+	check_overflow =false;
+	instrfield = jmp_addr;
+	}
+
+define (reloc=R_ARM_REL32_NOI) {
+	// JUMP relocation
+	value=56;
+	offset=32;
+	pcrel=true;
+	check_overflow =false;
+	instrfield = jmp_addr;
+	}
+
+unsigned is_valid_dest_addr(unsigned x) {
+        unsigned wr = x;
+        if ((47 < x) && (x < 0x1000))
+            error(0, "illegal: Work Register 0x", hex, wr);
+        if (((0x1009 < x) && (x < 0x1016)))
+            error(0, "illegal: Special Register 0x", hex, wr);
+        if (((0x1027 < x) && (x < 0x4000)))
+            error(0, "illegal: Address Register 0x", hex, wr);
+        if (x > 0xffff)
+            error(0, "illegal: Address Register 0x", hex, wr);
+        return x;
+       }
+
+define (instrfield=imm_hash) {
+        pseudo = true;
+        size = 1;
+        enumerated = (("","#"));
+        value = "";
+        }
+	
+define (instr=setMM) {
+        width = 128;
+        fields = (opcode(0x1),immed_or_reg_src_fld(1),ima_fld(0),imm_dat(0),src_add,dest_add);
+
+        dsyntax = ("set %f(%f,%f,%f),%f(%f,%f,%f)",
+                    mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+                    mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+        action = { };
+        }
+
+define (instr=setMM_abs) {
+        alias = setMM(src_add(is_addr_wr_spr(src_add)),
+                      dest_add(is_valid_dest_addr(dest_add)));
+        syntax = ("set %f, %f",src_add, dest_add);
+        }
+
+define (instr=set_m_m) {
+        alias = setMM(src_add(is_addr_wr_spr(translateM(mem,bank,column,slice))),
+                      dest_add(is_valid_dest_addr(translateM(mem1,bank1,column1,slice1))));
+        syntax = ("set %f(%f,%f,%f), %f(%f,%f,%f)",mem,bank,column,slice,mem1,bank1,column1,slice1);
+        }
+
+define (instr=set_m_r) {
+        alias = setMM(src_add(is_addr_wr_spr(translateM(mem,bank,column,slice))),
+                      dest_add(is_valid_dest_addr(any_dest_add_reg)));
+        syntax = ("set %f(%f,%f,%f),%f",mem,bank,column,slice,any_dest_add_reg);
+        }
+
+define (instr=set_r_m) {
+        alias = setMM(src_add(is_addr_wr_spr(any_src_add_reg)),
+                      dest_add(is_valid_dest_addr(translateM(mem,bank,column,slice))));
+        syntax = ("set %f,%f(%f,%f,%f)",any_src_add_reg,mem,bank,column,slice);
+        }
+
+define (instr=set_r_r) {
+        alias = setMM(src_add(is_addr_wr_spr(any_src_add_reg)),
+                      dest_add(is_valid_dest_addr(any_dest_add_reg)));
+        syntax = ("set %f,%f",any_src_add_reg,any_dest_add_reg);
+        }
+
+define (instr=setiM) {
+        width = 128;
+        fields = (opcode(0x1),immed_or_reg_src_fld(0),ima_fld(0),imm_dat,dest_add);
+
+        dsyntax = ("set #%f,%f(%f,%f,%f)",
+                    imm_dat,
+                    mem(decode_mem(dest_add)),bank(decode_bank(dest_add)),
+                    column(decode_column(dest_add)),slice(decode_slice(dest_add)));
+        action = { };
+        }
+
+// ADL regular expression gets confused with
+// ("set %p%f,%f",imm_hash,imm_dat,dest_add)
+// So the syntax is split into two.
+
+define (instr=setiM_abs_hash) {
+        alias = setiM(imm_dat(imm_dat),
+                      dest_add(is_valid_dest_addr(dest_add)));
+        syntax = ("set #%f,%f",imm_dat,dest_add);
+        }
+
+define (instr=setiM_abs) {
+        alias = setiM(imm_dat(imm_dat),
+                      dest_add(is_valid_dest_addr(dest_add)));
+        syntax = ("set %f,%f",imm_dat,dest_add);
+        }
+
+define (instr=seti_r) {
+        alias = setiM(imm_dat(imm_dat),
+                      dest_add(is_valid_dest_addr(any_dest_add_reg)));
+        syntax = ("set %p%f,%f",imm_hash,imm_dat,any_dest_add_reg);
+        }
+
+define (instr=seti_m) {
+        alias = setiM(imm_dat(imm_dat),
+                      dest_add(is_valid_dest_addr(translateM(mem,bank,column,slice))));
+        syntax = ("set %p%f,%f(%f,%f,%f)",imm_hash,imm_dat,mem,bank,column,slice);
+        }
+
+define (instr=set_ind) {
+        width = 128;
+        fields = (opcode(0x1),immed_or_reg_src_fld(1), ima_fld(1), src_add);
+        dsyntax = ("set.ind %f",src_add_reg(src_add));
+        action = { };
+        }
+
+define (instr=set_ind_abs) {
+        alias = set_ind(src_add(is_addr_wr(src_add)));
+        syntax = ("set.ind %f", src_add);
+        }
+
+define (instr=set_ind_r) {
+        alias = set_ind(src_add(is_addr_wr(src_add_reg)));
+        syntax = ("set.ind %f", src_add_reg);
+        }
+
+define (instr=set_ind_m) {
+        alias = set_ind(src_add(is_addr_wr(translateM(mem,bank,column,slice))));
+        syntax = ("set.ind %f(%f,%f,%f)", mem,bank,column,slice);
+        }
+
+define (instr=set_ind_IM) {
+        width = 128;
+        fields = (opcode(0x1),immed_or_reg_src_fld(0), ima_fld(1), src_add, imm_dat);
+        dsyntax = ("set.ind #%f, %f(%f,%f,%f)",
+                    imm_dat,
+                    mem(decode_mem(src_add)), bank(decode_bank(src_add)),
+                    column(decode_column(src_add)),slice(decode_slice(src_add)));
+        action = { };
+        }
+
+define (instr=set_ind_IM_abs) {
+        alias = set_ind_IM(imm_dat(imm_dat), src_add(is_addr_wr(src_add)));
+        syntax = ("set.ind %p%f,%f",imm_hash,imm_dat,src_add);
+        }
+
+define (instr=set_ind_i_r) {
+        alias = set_ind_IM(imm_dat(imm_dat), src_add(is_addr_wr(src_add_reg)));
+        syntax = ("set.ind %p%f,%f",imm_hash,imm_dat,src_add_reg);
+        }
+
+define (instr=set_ind_i_m) {
+        alias = set_ind_IM(imm_dat(imm_dat), src_add(is_addr_wr(translateM(mem,bank,column,slice))));
+        syntax = ("set.ind %p%f,%f(%f,%f,%f)",imm_hash,imm_dat,mem,bank,column,slice);
+        }
+
+/** get	src_add, dest_add  */
+
+define (instr=getMM) {
+	width = 128;
+	fields = (opcode(0x2),ima_fld(0),src_add,dest_add);
+	
+	dsyntax = ("get %f(%f,%f,%f),%f(%f,%f,%f)",
+			mem(decode_mem(src_add)),bank(decode_bank(src_add)),column(decode_column(src_add)),slice(decode_slice(src_add)),
+			mem1(decode_mem(dest_add)),bank1(decode_bank(dest_add)),column1(decode_column(dest_add)),slice1(decode_slice(dest_add)));
+	syntax = ("get %f,%f",src_add,dest_add);	/* generic syntax */
+	action = { };
+	}
+
+define (instr=get_m_m) {
+	alias = getMM(src_add(translateM(mem,bank,column,slice)),
+				dest_add(translateM(mem1,bank1,column1,slice1)));
+	syntax = ("get %f(%f,%f,%f), %f(%f,%f,%f)",mem,bank,column,slice,mem1,bank1,column1,slice1);
+	}
+
+define (instr=get_m_r) {
+	alias = getMM(src_add(translateM(mem,bank,column,slice)), 
+				dest_add(translateR(any_dest_add_reg)));
+	syntax = ("get %f(%f,%f,%f),%f",mem,bank,column,slice,any_dest_add_reg);
+	}
+
+define (instr=get_r_m) {
+	alias = getMM(src_add(translateR(any_src_add_reg)),
+				dest_add(translateM(mem,bank,column,slice)));
+	syntax = ("get %f,%f(%f,%f,%f)",any_src_add_reg,mem,bank,column,slice);
+	}
+
+define (instr=get_r_r) {
+	alias = getMM(src_add(translateR(any_src_add_reg)),
+				dest_add(translateR(any_dest_add_reg)));
+	syntax = ("get %f,%f",any_src_add_reg,any_dest_add_reg);
+	}
+
+define (instr=get_ind) {
+	width = 128;
+	fields = (opcode(0x2),ima_fld(1), src_add);
+	
+	dsyntax = ("get.ind %f",src_add_reg(src_add));
+	syntax = ("get %f",src_add); /* generic syntax */
+	action = { };
+	}
+
+define (instr=get_ind_X) {
+	alias = get_ind(src_add(is_addr_wr(src_add)));
+	syntax = ("get.ind %f",src_add);
+	}
+
+define (instr=get_ind_r) {
+	alias = get_ind(src_add(is_addr_wr(src_add_reg)));
+	syntax = ("get %f",src_add_reg);
+	}
+
+define (instr=get_ind_r_X) {
+	alias = get_ind(src_add(is_addr_wr(src_add_reg)));
+	syntax = ("get.ind %f",src_add_reg);
+	}
+
+
+define (instr=stop) {
+	width = 128;
+	fields = (opcode(0x4));
+	
+	action = { };
+	}
+
+define (instrfield=immed_or_reg_src_loop) {
+	// LOOP
+	bits = 121;
+	enumerated = (("",".immed"),".reg");
+	}
+
+define (instrfield=loop_wr) {
+	size = 6;
+	pseudo = true;
+	}
+
+define (instrfield=loop_wrnum) {
+	// LOOP
+	bits = (85, 80);
+	enumerated = (
+#include "wr3"
+	);
+	}
+
+define (instrfield=loop_cnt) {
+	// LOOP
+	bits = (111,96);
+	valid_ranges = (1, 65535);
+	}
+
+define (instr=loop) {
+	width = 128;
+	fields = (opcode(5),immed_or_reg_src_loop(1),loop_cnt(0),loop_wrnum);
+	
+	dsyntax = ("loop %f",loop_wrnum(loop_wrnum));
+	syntax = ("loop %f",loop_wrnum);
+	action = { };
+	}
+
+define (instr=loopreg) {
+	width =128;
+	alias = loop(loop_wrnum(loop_wr));
+	syntax = ("loop %f",loop_wr);
+	};
+
+define (instr=loopn) {
+	width = 128;
+	fields = (opcode(5),immed_or_reg_src_loop(0),loop_cnt,loop_wrnum(0));
+	
+	syntax = ("loop #%f",loop_cnt);
+	action = { };
+	}
+
+define (instr=next) {
+	width = 128;
+	fields = (opcode(0x6));
+	
+	syntax = ("next");
+	action = { };
+	}
+
+define (instrfield=sync_type) {
+	bits = (121,120);
+	enumerated = (reserved, ".pdma", ".thread", ".dsp");
+	}
+
+define (instrfield=sync_csid) {
+	bits = (4,0);
+	}
+
+define (instr=sync) {
+	width = 128;
+	fields = (opcode(0x7),sync_type(0),sync_csid(0));
+	syntax = ("sync");
+	action = {};
+	}
+
+define (instr=sync_dsp) {
+	width = 128;
+	fields = (opcode(0x7),sync_type(3),sync_csid(0));
+	syntax = ("sync.dsp");
+	action = {};
+	}
+
+define (instr=sync_csid) {
+	width = 128;
+	fields = (opcode(0x7),sync_type,sync_csid);
+	syntax = ("sync %p %f",sync_type,sync_csid);
+	action = {};
+	}
+
+define (instrfield=ev_type1) {
+	bits = (120,119);
+	enumerated = (reserved, ".cpu", ".ext", ".int");
+	}
+
+define (instrfield=ev_type2) {
+	bits = (120,119);
+	enumerated = (reserved, ".cpu", reserved, ".int");
+	}
+
+define (instrfield=evt_ev) {
+	bits = (100,96);
+	display = hex;
+	}
+
+/** wait	ev_type wait_ev */
+
+define (instrfield=wait_ev) {
+	// WAIT
+	bits = (102,96);
+	}
+
+define (instr=wait) {
+	width = 128;
+	fields = (opcode(0x8),ev_type1,wait_ev);
+	syntax = ("%i%p %f",ev_type1,wait_ev);
+	action = {};
+	}
+
+/** evt	ev_type evt_ev */
+define (instr=evt) {
+	width = 128;
+	fields = (opcode(0x9),ev_type2,evt_ev);
+	syntax = ("%i%p %f",ev_type2,evt_ev);
+	action = {};
+	}
+
+/** watchdog	wdog_op wdog_ev count */
+
+define (instrfield=wdog_op) {
+	// WATCHDOG OP
+	bits = (121,120);
+	enumerated = (".start",".stop",".reset",".event");
+	}
+
+define (instrfield=wdog_ev) {
+	// WATCHDOG EV
+	bits = (117,112);
+	enumerated = (".ev0", ".ev1", ".ev2", ".ev3", ".rcs", ".rfs",
+			".mipi_0_0h", ".mipi_0_1h", ".mipi_0_2h", ".mipi_0_3h",
+			".mipi_1_0h", ".mipi_1_1h", ".mipi_1_2h", ".mipi_1_3h",
+			".mipi_2_0h", ".mipi_2_1h", ".mipi_2_2h", ".mipi_2_3h",
+			".mipi_3_0h", ".mipi_3_1h", ".mipi_3_2h", ".mipi_3_3h",
+			".mipi_0_0v", ".mipi_0_1v", ".mipi_0_2v", ".mipi_0_3v",
+			".mipi_1_0v", ".mipi_1_1v", ".mipi_1_2v", ".mipi_1_3v",
+			".mipi_2_0v", ".mipi_2_1v", ".mipi_2_2v", ".mipi_2_3v",
+			".mipi_3_0v", ".mipi_3_1v", ".mipi_3_2v", ".mipi_3_3v"
+			);
+	}
+
+define (instrfield=wdog_cnt) {
+	// WATCHDOG CNT
+	bits = (23,0);
+	}
+
+define (instr=watchdog) {
+	width = 128;
+	fields = (opcode(0xa),wdog_op,wdog_ev,wdog_cnt);
+	
+	syntax = ("%i %f %f %f",wdog_op,wdog_ev,wdog_cnt);
+	action = {};
+	}
+
+/** dsp value*/
+define (instrfield=dsp_value_1) {
+	bits = (120,96);
+  valid_ranges = (0, 0x1ffffff);
+	}
+  
+define (instrfield=dsp_value_2) {
+	bits = (95,64);
+	}
+  
+define (instrfield=dsp_value_3) {
+	bits = (63,32);
+	}
+  
+define (instrfield=dsp_value_4) {
+	bits = (31,0);
+	}
+
+define (instrfield=dsp_blocking) {
+	bits = (121);
+	enumerated = (".no_block", ".block");
+	}
+
+define (instr=dsp) {
+	width = 128;
+	fields = (opcode(0x2e),dsp_blocking,dsp_value_1,dsp_value_2,dsp_value_3,dsp_value_4);
+	
+	syntax = ("dsp %f %f %f %f %f",dsp_blocking,dsp_value_1,dsp_value_2,dsp_value_3,dsp_value_4);
+	action = { };
+	}
+
+/*
+** jump.cond cond_sel cond_wr rel_off 
+** jump	                      rel_off
+*/
+
+	define (instrfield=jmp_type) {
+	// conditional jump
+	bits = 121;
+	enumerated = (("",".always"), ".cond");
+	}
+
+define (instrfield=jmp_sel) {
+	// conditional bit selection
+	bits = (120,117);
+	enumerated = (".bit0",".bit1",".bit2",".bit3",".bit4",".bit5",".bit6",".bit7",".bit8",".bit9");
+	}
+
+define (instrfield=jmp_wr) {
+	// conditional wr
+	bits = (85,80);
+	}
+
+define (instrfield=jmp_wr_reg) {
+	// conditional wr
+	pseudo = true;
+	width=6;
+	enumerated = (
+#include "wr3"
+	);
+	}
+
+define (instrfield=jmp_addr) {
+	// target address relative to @jump instr
+	bits = (63,32);
+	display=hex;
+	addr = pc;
+	is_signed = true;
+	unsigned_upper_bound = true;
+	}
+
+define (instr=jump) {
+	width = 128;
+	fields = (opcode(0xD),jmp_type(0),jmp_sel(0),jmp_wr(0),jmp_addr);
+	
+	dsyntax = ("jump %f",jmp_addr);
+	syntax = ("jump %f",jmp_addr);
+	action = { };
+	}
+
+define (instr=jump_cond) {
+	width = 128;
+	fields = (opcode(0xD),jmp_type(1),jmp_sel,jmp_wr,jmp_addr);
+	syntax = ("jump %f %f %f",jmp_sel,jmp_wr,jmp_addr);
+	dsyntax = ("jump %f %f %f",jmp_sel,jmp_wr_reg(jmp_wr),jmp_addr);
+	action = { };
+	}
+
+define (instr=jump_cond_R) {
+	width = 128;
+	alias = jump_cond(jmp_sel(jmp_sel),jmp_wr(jmp_wr_reg),jmp_addr(jmp_addr));
+	syntax = ("jump %f %f %f",jmp_sel,jmp_wr_reg,jmp_addr);
+	}
+
+/** thread	th_id */
+
+define (instrfield=th_id) {
+	bits = (3, 0);
+	enumerated = (
+		reserved,".thd_scs0",".thd_scs1",reserved,".thd_scs2",
+		reserved,reserved,reserved,".thd_scs3");
+	}
+
+define (instr=thread) {
+	width = 128;
+	fields = (opcode(0x10),th_id);
+	
+	syntax = ("%i %f",th_id);
+	action = {};
+	}
+
+/** repeat */
+
+define (instrfield=rpt_cnt) {
+	bits = (108,96);
+	}
+
+define (instrfield=rpt_addr_incr0) {
+	bits = (63,48);
+	}
+
+define (instrfield=rpt_addr_incr1) {
+	bits = (47,32);
+	}
+
+define (instrfield=rpt_addr_incr2) {
+	bits = (31,16);
+	}
+
+define (instrfield=rpt_addr_incr3) {
+	bits = (15,0);
+	}
+
+define (instr=repeat) {
+	width = 128;
+	fields = (opcode(0xf), rpt_cnt, rpt_addr_incr0, rpt_addr_incr1, rpt_addr_incr2, rpt_addr_incr3);
+	syntax = ("%i %f,%f,%f,%f,%f",rpt_cnt, rpt_addr_incr0, rpt_addr_incr1, rpt_addr_incr2, rpt_addr_incr3);
+	action = {};
+	}
+
+/*
+pdma        se_tag data_packing trans_type sync_async trace coherent vector_len sysram_mem_start_addr, opram_mem_start_addr, opram_skip_addr, opram_continuous_addr, sysram_skip_addr, sysram_continous_addr
+pdma.ind    se_tag data_packing trans_type sync_async trace coherent vector_len sysram_mem_start_addr, sysram_offset_wr_num, opram_skip_addr, opram_continuous_addr, sysram_skip_addr, sysram_continous_addr
+*/
+
+  define (instrfield=se)      { bits = 120; enumerated = (".zeropad",".signext"); }
+
+  define (instrfield=data_packing) {
+        bits = (119,114);
+        enumerated = (".16cmplx",".24cmplx",".24real",".16real",
+                        /*  4 */ ".48bin",".16swap",".16bit_transpose", reserved,
+                        /*  8 */ reserved, reserved, reserved, reserved,
+                        /* 12 */ reserved, reserved, reserved, reserved, 
+                        /* 16 */ ".CP4Q", ".CP4Q_FMTA", ".CP4Q_FMTB", ".CP8D_FMTA",
+                        /* 20 */ ".CP8D_FMTB", ".CP8D_FMTC", ".CP16_FMTA", ".CP16_FMTB",
+                        /* 24 */ ".CP16_FMTC", ".CP16_FMTD", ".CP32_FMTB", reserved,
+                        /* 28 */ reserved, reserved, reserved, reserved,
+                        /* 32 */ ".abs_8_untagged", ".idx_8_untagged", ".idx_sum8_untagged", ".abs_8_tagged", 
+                        /* 36 */ ".idx_8_tagged", ".idx_sum8_tagged", ".abs_16_untagged", ".idx_16_untagged",
+                        /* 40 */ ".idx_sum16_untagged", ".abs_16_tagged", ".idx_16_tagged", ".idx_sum16_tagged",
+                        /* 44 */ ".abs_24_untagged", ".idx_24_untagged", ".idx_sum24_untagged", ".abs_24_tagged",
+                        /* 48 */ ".idx_24_tagged", ".idx_sum24_tagged",	".abs_32_untagged", ".idx_32_untagged",
+                        /* 52 */ ".idx_sum32_untagged");
+  }
+
+  define (instrfield=trans_type) { bits = 113; enumerated = (".sysram2opram",".opram2sysram"); }
+
+  define (instrfield=sync_async) { bits = 112; enumerated = (".async",".sync"); }
+
+  define (instrfield=vector_len) { bits = (111,96); }
+
+  define (instrfield=sysram_mem_start_addr) { bits = (95,64); display=hex; size = 32; }
+
+  define (instrfield=pdma_coherent) { pseudo = true; size = 1; enumerated = ((".nocoherent",""), ".coherent"); value = ""; }
+  define (instrfield=pdma_trace)    { pseudo = true; size = 1; enumerated = ((".notrace",""), ".trace"); value = ""; }
+
+  define (instrfield=opram_mem_start_addr) { bits = (63,48); }
+
+  define (instrfield=opram_skip_addr) { bits = (47,36); }
+
+  define (instrfield=opram_continuous_addr) { bits = (35,24); }
+
+  define (instrfield=sysram_skip_addr) { bits = (23,12); }
+
+  define (instrfield=sysram_continous_addr) { bits = (11,0); }
+
+  define (instrfield=pdma_indirect_reg) {
+        pseudo = true;
+        width = 6;
+        enumerated = (
+#include "wr3"
+        );
+  }
+
+  unsigned is_pdma_addr_aligned(unsigned addr) {
+        if ((addr % 8) != 0)
+            error(0, "illegal: PDMA address is not a multiple of 8 : 0x", hex, addr);
+        return addr;
+  }
+
+  define (instr=pdma) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld(0),se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+              opram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+
+    assemble = false;
+    dsyntax = ("pdma %p %p %p %p %p %p, %f,%f,%f(%f,%f,%f),%f,%f,%f,%f",
+                se,data_packing,trans_type,sync_async,
+                pdma_trace(sysram_mem_start_addr&1),
+                pdma_coherent((sysram_mem_start_addr&2)>>1),
+                vector_len,sysram_mem_start_addr(sysram_mem_start_addr&0xfffffffc),
+                mem(decode_mem(opram_mem_start_addr)),
+                bank(decode_bank(opram_mem_start_addr)),
+                column(decode_column(opram_mem_start_addr)),
+                slice(decode_slice(opram_mem_start_addr)),
+                opram_skip_addr,opram_continuous_addr,
+                sysram_skip_addr,sysram_continous_addr
+              );
+    action = { };
+  }
+
+  define (instr=pdma_ind) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld(1),se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+              opram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+
+    assemble = false;
+    dsyntax = ("pdma.ind %p %p %p %p %p %p, %f,%f,%f,%f,%f,%f,%f",
+                se,data_packing,trans_type,sync_async,
+                pdma_trace(sysram_mem_start_addr&1),
+                pdma_coherent((sysram_mem_start_addr&2)>>1),
+                vector_len,sysram_mem_start_addr(sysram_mem_start_addr&0xfffffffc),
+                pdma_indirect_reg(opram_mem_start_addr),
+                opram_skip_addr,opram_continuous_addr,
+                sysram_skip_addr,sysram_continous_addr
+              );
+    action = { };
+  }
+
+  define (instr=pdma_M) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld(0),se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+    syntax = ("pdma %p %p %p %p %p %p, %f,%f,%f(%f,%f,%f),%f,%f,%f,%f",
+               se,data_packing,trans_type,sync_async,pdma_coherent, pdma_trace,
+               vector_len,sysram_mem_start_addr,
+               /* opram_mem_start_addr*/ mem, bank, column, slice,
+               opram_skip_addr,opram_continuous_addr,
+               sysram_skip_addr,sysram_continous_addr
+              );
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        /* Check if sysram_mem_start_addr is aligned. */
+        is_pdma_addr_aligned(nargs[7].value());
+
+        /* Create the relocation addend from trace and coherent bits ... */
+        unsigned addend = nargs[5].value() + nargs[4].value()*2;
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[7].set_value((nargs[7].value())+addend);
+
+        /* Decode opram_mem_start_addr */
+        unsigned addr = translateM(nargs[8].value(),nargs[9].value(),nargs[10].value(),nargs[11].value());
+        nargs[8].set_value(is_addr_oram_tram(addr));
+
+        /* Once we have the opram_mem_start address, there is no need for mem, bank, column and slice.
+           Delete them. */
+        nargs.erase(nargs.begin() + 9, nargs.begin() + 12);
+
+        /* Since the trace and coherent bits are merged to the address, remove those also. */
+        nargs.erase(nargs.begin() + 4, nargs.begin() + 6);
+        b.push_back(createInstr("pdma",nargs));
+        return b;
+      };
+  }
+
+  define (instr=pdma_abs) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld(0),se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+              opram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        /* Check if sysram_mem_start_addr is aligned. */
+        is_pdma_addr_aligned(nargs[7].value());
+
+        /* Create the relocation addend from trace and coherent bits ... */
+        unsigned addend = nargs[5].value() + nargs[4].value()*2;
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[7].set_value((nargs[7].value())+addend);
+
+        /* Since the trace and coherent bits are merged to the address, remove them. */
+        nargs.erase(nargs.begin() + 4, nargs.begin() + 6);
+
+        /* After removing redundant arguments, nargs[6] is now opram_mem_start_addr */
+        is_addr_oram_tram(nargs[6].value());
+        b.push_back(createInstr("pdma",nargs));
+        return b;
+      };
+
+    syntax = ("pdma %p %p %p %p %p %p, %f,%f,%f,%f,%f,%f,%f",
+              se,data_packing,trans_type,sync_async, pdma_coherent, pdma_trace,
+              vector_len,sysram_mem_start_addr,opram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr
+              );
+  }
+
+  define (instr=pdma_ind_abs) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld(1),se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+              opram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        is_pdma_addr_aligned(nargs[7].value());
+        unsigned addend = nargs[5].value() + nargs[4].value()*2;
+        if (addend) nargs[7].set_value((nargs[7].value())+addend);
+        nargs.erase(nargs.begin() + 4, nargs.begin() + 6);
+        is_addr_wr(nargs[6].value());
+        b.push_back(createInstr("pdma_ind",nargs));
+        return b;
+      };
+
+    syntax = ("pdma.ind %p %p %p %p %p %p, %f,%f,%f,%f,%f,%f,%f",
+               se, data_packing, trans_type, sync_async,
+               pdma_coherent, pdma_trace, vector_len, sysram_mem_start_addr,
+               opram_mem_start_addr, opram_skip_addr,
+               opram_continuous_addr, sysram_skip_addr,
+               sysram_continous_addr
+              );
+  }
+
+  define (instr=pdma_ind_r) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld(1),se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+    asm_rank = 90;
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        is_pdma_addr_aligned(nargs[7].value());
+        unsigned addend = nargs[5].value() + nargs[4].value()*2;
+        if (addend) nargs[7].set_value((nargs[7].value())+addend);
+        nargs.erase(nargs.begin() + 4, nargs.begin() + 6);
+        is_addr_wr(nargs[6].value());
+        b.push_back(createInstr("pdma_ind",nargs));
+        return b;
+      };
+
+    syntax = ("pdma.ind %p %p %p %p %p %p, %f,%f,%f,%f,%f,%f,%f",
+               se, data_packing, trans_type, sync_async,
+               pdma_coherent, pdma_trace, vector_len, sysram_mem_start_addr,
+               pdma_indirect_reg /*opram_mem_start_addr*/,
+               opram_skip_addr,opram_continuous_addr,
+               sysram_skip_addr,sysram_continous_addr
+              );
+  }
+
+  define (instr=pdma_ind_M) {
+
+    width = 128;
+    fields = (opcode(0x28),immed_or_reg_src_fld(1),se,data_packing,trans_type,sync_async,
+              vector_len,sysram_mem_start_addr,
+              opram_skip_addr,opram_continuous_addr,
+              sysram_skip_addr,sysram_continous_addr);
+    syntax = ("pdma.ind %p %p %p %p %p %p, %f,%f,%f(%f,%f,%f),%f,%f,%f,%f",
+               se,data_packing,trans_type,sync_async,pdma_coherent, pdma_trace,
+               vector_len,sysram_mem_start_addr,
+               /* opram_mem_start_addr*/ mem, bank, column, slice,
+               opram_skip_addr,opram_continuous_addr,
+               sysram_skip_addr,sysram_continous_addr
+              );
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        is_pdma_addr_aligned(nargs[7].value());
+        unsigned addend = nargs[5].value() + nargs[4].value()*2;
+        if (addend) nargs[7].set_value((nargs[7].value())+addend);
+        unsigned addr = translateM(nargs[8].value(),nargs[9].value(),nargs[10].value(),nargs[11].value());
+        nargs[8].set_value(is_addr_wr(addr));
+        nargs.erase(nargs.begin() + 9, nargs.begin() + 12);
+        nargs.erase(nargs.begin() + 4, nargs.begin() + 6);
+        b.push_back(createInstr("pdma_ind",nargs));
+        return b;
+      };
+  }
+}
