@@ -1,0 +1,1098 @@
+/*
+ * Copyright 2020-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt_cmds) {
+
+define (reloc=R_AARCH64_ABS32) {
+	// PDMA relocation
+	value=258;
+	pcrel=false;
+	instrfield = sysram_mem_start_addr;
+	}
+
+define (reloc=R_ARM_ABS32_NOI) {
+	// PDMA relocation
+	value=55;
+	pcrel=false;
+	instrfield = sysram_mem_start_addr;
+	}
+
+define (reloc=R_AARCH64_PREL32) {
+	// JUMP relocation
+	value=261;
+	offset=32;
+	pcrel=true;
+	check_overflow =false;
+	instrfield = jmp_addr;
+	}
+
+define (reloc=R_ARM_REL32_NOI) {
+	// JUMP relocation
+	value=56;
+	offset=32;
+	pcrel=true;
+	check_overflow =false;
+	instrfield = jmp_addr;
+	}
+
+unsigned is_valid_dest_addr(unsigned x) {
+        unsigned wr = x;
+        if ((47 < x) && (x < 0x1000))
+            error(0, "illegal: Work Register 0x", hex, wr);
+        if (((0x1009 < x) && (x < 0x1016)))
+            error(0, "illegal: Special Register 0x", hex, wr);
+        if (((0x1027 < x) && (x < 0x4000)))
+            error(0, "illegal: Address Register 0x", hex, wr);
+        if (x > 0xffff)
+            error(0, "illegal: Address Register 0x", hex, wr);
+        return x;
+       }
+
+define (instrfield=imm_hash) {
+        pseudo = true;
+        size = 1;
+        enumerated = (("","#"));
+        value = "";
+        }
+
+
+// set  src_add, dest_add
+  define (instr = set) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x1), immed_or_reg_src_fld(1), /* reserved */
+              /* 111: 96 */ /* reserved */ ima_fld(0), /* reserved */
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add,
+              /*  63: 48 */ /* reserved */
+              /*  47:  0 */ imm_dat(0));
+
+    /*               1   2*/
+    syntax = ("set  %f, %f",
+               /* 1 */ src_add,
+               /* 2 */ dest_add);
+
+    /*                1       2 */
+    dsyntax = ("set  %f%f_%f%f, %f%f_%f%f",
+               /* 1 */ DS_MEM1(src_add),
+               /* 2 */ DS_MEM(dest_add));
+
+    asm_rules = (R_src_valid_reg,
+                 R_dest_valid_loc);
+
+    action = { };
+  };
+
+// set  #imm_dat, dest_add
+  define (instr = set_i) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x1), immed_or_reg_src_fld(0), /* reserved */
+              /* 111: 96 */ /* reserved */ ima_fld(0), /* reserved */
+              /*  95: 80 */ src_add(0),
+              /*  79: 64 */ dest_add,
+              /*  63: 48 */ /* reserved */
+              /*  47:  0 */ imm_dat);
+
+    /*                1   2*/
+    syntax = ("set  #%f, %f",
+               /* 1 */ imm_dat,
+               /* 2 */ dest_add);
+
+    /*                 1   2 */
+    dsyntax = ("set  #%f, %f%f_%f%f",
+               /* 1 */ imm_dat,
+               /* 2 */ DS_MEM(dest_add));
+
+    asm_rules = (R_dest_valid_loc);
+
+    action = { };
+  };
+
+// set.ind  src_add
+  define (instr = set_ind) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x1), immed_or_reg_src_fld(1), /* reserved */
+              /* 111: 96 */ /* reserved */ ima_fld(1), /* reserved */
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add(0),
+              /*  63: 48 */ /* reserved */
+              /*  47:  0 */ imm_dat(0));
+
+    /*              1 */
+    syntax = ("set.ind  %f", src_add);
+
+    dsyntax = ("set.ind  %f", ds_src_ind(src_add));
+
+    asm_rules = (R_src_ind);
+
+    action = { };
+  };
+
+// set.ind  #imm_dat, src_add
+  define (instr = set_i_ind) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x1), immed_or_reg_src_fld(0), /* reserved */
+              /* 111: 96 */ /* reserved */ ima_fld(1), /* reserved */
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add(0),
+              /*  63: 48 */ /* reserved */
+              /*  47:  0 */ imm_dat);
+
+    /*               1   2 */
+    syntax = ("set.ind  #%f, %f",
+               /* 1 */ imm_dat,
+               /* 2 */ src_add);
+
+    /*                1   2 */
+    dsyntax = ("set.ind  #%f, %f",
+               /* 1 */ imm_dat,
+               /* 2 */ ds_src_ind(src_add));
+
+    asm_rules = (R_src_ind);
+
+    action = { };
+  };
+
+
+// get  src_add, dest_add
+  define (instr = get) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x2), /* reserved */
+              /* 111: 96 */ /* reserved */ ima_fld(0), /* reserved */
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add
+              /*  63: 48 */ /* reserved */
+              /*  47:  0 */ /* reserved */);
+
+    /*              1   2 */
+    syntax = ("get  %f, %f",
+               /* 1 */ src_add,
+               /* 2 */ dest_add);
+
+    /*                1       2 */
+    dsyntax = ("get  %f_%f_%f_%f, %f%f_%f%f",
+               /* 1 */ DS_RAM1(src_add),
+               /* 2 */ DS_MEM(dest_add)
+    );
+
+    asm_rules = (R_src_ram_aligned,
+                 R_dest_valid_reg);
+
+    action = { };
+  };
+
+// get.ind  src_add
+  define (instr = get_ind) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x2), /* reserved */
+              /* 111: 96 */ /* reserved */ ima_fld(1), /* reserved */
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add(0)
+              /*  63: 48 */ /* reserved */
+              /*  47:  0 */ /* reserved */);
+
+    syntax = ("get.ind  %f", src_add);
+
+    dsyntax = ("get.ind  %f", ds_src_ind(src_add));
+
+    asm_rules = (R_src_ind);
+
+    action = { };
+  };
+
+
+// stop
+define (instr=stop) {
+	width = 128;
+	fields = (opcode(0x4));
+	
+	action = { };
+	}
+
+
+define (instrfield=immed_or_reg_src_loop) {
+	// LOOP
+	bits = 121;
+	enumerated = (("",".immed"),".reg");
+	}
+
+define (instrfield=loop_wr) {
+	// LOOP
+	bits = (85, 80);
+	valid_ranges = (0, 47);
+	}
+
+define (instrfield=loop_cnt) {
+	// LOOP
+	bits = (111,96);
+	valid_ranges = (1, 65535);
+	}
+
+// loop  loop_wr
+define (instr=loop) {
+	width = 128;
+	fields = (opcode(5), immed_or_reg_src_loop(1), loop_cnt(0), loop_wr);
+
+	dsyntax = ("loop %f", loop_wr);
+
+	syntax = ("loop %f", loop_wr);
+
+	action = { };
+	}
+
+// loop  #imm_loop_cnt
+define (instr=loopi) {
+	width = 128;
+	fields = (opcode(5), immed_or_reg_src_loop(0), loop_cnt, loop_wr(0));
+
+	syntax = ("loop #%f", loop_cnt);
+	action = { };
+	}
+
+
+// next
+define (instr=next) {
+	width = 128;
+	fields = (opcode(0x6));
+
+	syntax = ("next");
+	action = { };
+	}
+
+
+define (instrfield=sync_type) {
+	bits = (121,120);
+	enumerated = (("", ".pdma"), reserved, reserved, ".dsp");
+	}
+
+// sync[.pdma]
+// sync.dsp
+define (instr=sync) {
+	width = 128;
+	fields = (opcode(0x7), sync_type);
+	syntax = ("sync %f", sync_type);
+	action = {};
+	}
+
+
+define (instrfield=ev_type1) {
+	bits = (120,119);
+	enumerated = (reserved, ".cpu", ".ext", reserved);
+	}
+
+define (instrfield=ev_type2) {
+	bits = (120,119);
+	}
+
+define (instrfield=evt_ev) {
+	bits = (100,96);
+	display = hex;
+	}
+
+// wait.cpu ev
+// wait.ext ev
+define (instrfield=wait_ev) {
+	// WAIT
+	bits = (102,96);
+	}
+
+define (instr=wait) {
+	width = 128;
+	fields = (opcode(0x8),ev_type1,wait_ev);
+	syntax = ("%i%p %f",ev_type1,wait_ev);
+	action = {};
+	}
+
+
+// evt.cpu ev
+define (instr=evt) {
+	width = 128;
+	fields = (opcode(0x9), ev_type2(1), evt_ev);
+	syntax = ("evt.cpu %f", evt_ev);
+	action = {};
+	}
+
+
+define (instrfield=wdog_op) {
+	// WATCHDOG OP
+	bits = (121,120);
+	enumerated = (".start",".stop",".reset",".event");
+	}
+
+define (instrfield=wdog_ev) {
+	// WATCHDOG EV
+	bits = (117,112);
+	enumerated = (".ev0", ".ev1", ".ev2", ".ev3", ".rcs", ".rfs",
+			".mipi_0_0h", ".mipi_0_1h", ".mipi_0_2h", ".mipi_0_3h",
+			reserved, reserved, reserved, reserved,
+			reserved, reserved, reserved, reserved,
+			reserved, reserved, reserved, reserved,
+			".mipi_0_0v", ".mipi_0_1v", ".mipi_0_2v", ".mipi_0_3v",
+			reserved, reserved, reserved, reserved,
+			reserved, reserved, reserved, reserved,
+			reserved, reserved, reserved, reserved
+			);
+	}
+
+define (instrfield=wdog_cnt) {
+	// WATCHDOG CNT
+	bits = (23,0);
+	}
+
+// watchdog op ev cnt_int_val
+define (instr=watchdog) {
+	width = 128;
+	fields = (opcode(0xa), wdog_op, wdog_ev, wdog_cnt);
+	
+	syntax = ("%i %f %f %f", wdog_op, wdog_ev, wdog_cnt);
+	action = {};
+	}
+
+
+// dsp blocking value1 value2 value3 value4
+define (instrfield=dsp_value_1) {
+	bits = (120,96);
+  valid_ranges = (0, 0x1ffffff);
+	}
+  
+define (instrfield=dsp_value_2) {
+	bits = (95,64);
+	}
+  
+define (instrfield=dsp_value_3) {
+	bits = (63,32);
+	}
+  
+define (instrfield=dsp_value_4) {
+	bits = (31,0);
+	}
+
+define (instrfield=dsp_blocking) {
+	bits = (121);
+	enumerated = (".no_block", ".block");
+	}
+
+define (instr=dsp) {
+	width = 128;
+	fields = (opcode(0x2e),dsp_blocking,dsp_value_1,dsp_value_2,dsp_value_3,dsp_value_4);
+	
+	syntax = ("dsp %f %f %f %f %f",dsp_blocking,dsp_value_1,dsp_value_2,dsp_value_3,dsp_value_4);
+	action = { };
+	}
+
+
+	define (instrfield=jmp_type) {
+	// conditional jump
+	bits = 121;
+	enumerated = (("",".always"), ".cond");
+	}
+
+define (instrfield=jmp_sel) {
+	// conditional bit selection
+	bits = (120,117);
+	enumerated = (".bit0",".bit1",".bit2",".bit3",".bit4",".bit5",".bit6",".bit7",".bit8",".bit9");
+	}
+
+
+define (instrfield=jmp_addr) {
+	// target address relative to @jump instr
+	bits = (63,32);
+	display=hex;
+	addr = pc;
+	is_signed = true;
+	unsigned_upper_bound = true;
+	}
+
+// jump  rel_off
+define (instr=jump) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0xD), jmp_type(0), jmp_sel(0), /* reserved, */
+              /* 111: 96 */ /* reserved */
+              /*  95: 80 */ /* reserved */ sel_wr(0),
+              /*  79: 64 */ /* reserved */
+              /*  63: 32 */ jmp_addr
+              /*  31:  0 */ /* reserved */);
+
+    dsyntax = ("jump %f", jmp_addr);
+    syntax = ("jump %f", jmp_addr);
+
+    action = { };
+  }
+
+// jump.cond cond_sel sel_wr rel_off 
+define (instr=jump_cond) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0xD), jmp_type(1), jmp_sel, /* reserved, */
+              /* 111: 96 */ /* reserved */
+              /*  95: 80 */ /* reserved */ sel_wr,
+              /*  79: 64 */ /* reserved */
+              /*  63: 32 */ jmp_addr
+              /*  31:  0 */ /* reserved */);
+
+    syntax = ("jump %f %f %f", jmp_sel, sel_wr, jmp_addr);
+    dsyntax = ("jump %f %f %f", jmp_sel, sel_wr, jmp_addr);
+
+    action = { };
+  }
+
+
+define (instrfield=rpt_cnt) {
+	bits = (108,96);
+	}
+
+define (instrfield=rpt_addr_incr0) {
+	bits = (63,48);
+	}
+
+define (instrfield=rpt_addr_incr1) {
+	bits = (47,32);
+	}
+
+define (instrfield=rpt_addr_incr2) {
+	bits = (31,16);
+	}
+
+define (instrfield=rpt_addr_incr3) {
+	bits = (15,0);
+	}
+
+// repeat rpt_cnt addr_incr0, addr_incr1, addr_incr2, addr_incr3
+define (instr=repeat) {
+	width = 128;
+	fields = (opcode(0xf), rpt_cnt, rpt_addr_incr0, rpt_addr_incr1, rpt_addr_incr2, rpt_addr_incr3);
+	syntax = ("%i %f,%f,%f,%f,%f",rpt_cnt, rpt_addr_incr0, rpt_addr_incr1, rpt_addr_incr2, rpt_addr_incr3);
+	action = {};
+	}
+
+/*
+pdma        se_tag data_packing trans_type sync_async trace vector_len sysram_mem_start_addr, opram_mem_start_addr, opram_skip_addr, opram_continuous_addr, sysram_skip_addr, sysram_continous_addr
+pdma.ind    se_tag data_packing trans_type sync_async trace vector_len sysram_mem_start_addr, sysram_offset_wr_num, opram_skip_addr, opram_continuous_addr, sysram_skip_addr, sysram_continous_addr
+*/
+
+  define (instrfield=se)      { bits = 120; enumerated = (".zeropad",".signext"); }
+
+  define (instrfield=data_packing) {
+        bits = (119,114);
+        enumerated = (".16cmplx",".24cmplx",".24real",".16real",
+                        /*  4 */ ".48bin",".16swap",".16bit_transpose", reserved,
+                        /*  8 */ reserved, reserved, reserved, reserved,
+                        /* 12 */ reserved, reserved, reserved, reserved, 
+                        /* 16 */ ".CP4D", ".CP4D_FMTA", ".CP4D_FMTB", ".CP8_FMTA",
+                        /* 20 */ ".CP8_FMTB", ".CP8_FMTC", ".CP16_FMTA", ".CP16_FMTB",
+                        /* 24 */ ".CP16_FMTC", ".CP16_FMTD", reserved, ".CP4",
+                        /* 28 */ ".CP4_FMTA", ".CP4_FMTB", ".CP6", ".CP16",
+                        /* 32 */ ".abs_8_untagged", ".idx_8_untagged", ".idx_sum8_untagged", ".abs_8_tagged", 
+                        /* 36 */ ".idx_8_tagged", ".idx_sum8_tagged", ".abs_16_untagged", ".idx_16_untagged",
+                        /* 40 */ ".idx_sum16_untagged", ".abs_16_tagged", ".idx_16_tagged", ".idx_sum16_tagged",
+                        /* 44 */ ".abs_24_untagged", ".idx_24_untagged", ".idx_sum24_untagged", ".abs_24_tagged",
+                        /* 48 */ ".idx_24_tagged", ".idx_sum24_tagged",	".abs_32_untagged", ".idx_32_untagged",
+                        /* 52 */ ".idx_sum32_untagged");
+  }
+
+  define (instrfield=trans_type) { bits = 113; enumerated = (".sysram2opram",".opram2sysram"); }
+
+  define (instrfield=sync_async) { bits = 112; enumerated = (".async",".sync"); }
+
+  define (instrfield=vector_len) { bits = (111,96); }
+
+  define (instrfield=sysram_mem_start_addr) { bits = (95,64); display=hex; size = 32; }
+
+  define (instrfield=pdma_trace)    { pseudo = true; size = 1; enumerated = ((".notrace",""), ".trace"); value = ""; }
+
+  define (instrfield=opram_mem_start_addr) { bits = (63,48); }
+
+  define (instrfield=opram_skip_addr) { bits = (47,36); }
+
+  define (instrfield=opram_continuous_addr) { bits = (35,24); }
+
+  define (instrfield=sysram_skip_addr) { bits = (23,12); }
+
+  define (instrfield=sysram_continous_addr) { bits = (11,0); }
+
+
+  void check_sysram_alignment (unsigned addr) {
+    if ((addr % 8) != 0) {
+      error(0, "illegal operand sysram_mem_start_addr : 0x" , hex, addr ,
+            " , SRAM memory start address should be multiple of 8 for PDMA transfer.");
+    }
+  }
+
+  define (instr=pdma) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(0), se, data_packing, trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23: 12 */ sysram_skip_addr,
+              /*  23: 12 */ sysram_continous_addr);
+
+    assemble = false;
+
+    /*                1, 2, 3, 4, 5, 6,  7,  8,           9,  10, 11, 12  */
+    dsyntax = ("pdma %f %f %f %f %f, %f, %f, %f_%f_%f_%f, %f, %f, %f, %f",
+                /* 1 */ se,
+                /* 2 */ data_packing,
+                /* 3 */ trans_type,
+                /* 4 */ sync_async,
+                /* 5 */ pdma_trace(sysram_mem_start_addr&1),
+                /* 6 */ vector_len,
+                /* 7 */ sysram_mem_start_addr(sysram_mem_start_addr&0xfffffffc),
+                /* 8 */ DS_RAM(opram_mem_start_addr),
+                /* 9 */ opram_skip_addr,
+                /* 10 */ opram_continuous_addr,
+                /* 11 */ sysram_skip_addr,
+                /* 12 */ sysram_continous_addr
+              );
+
+    action = { };
+  }
+
+  define (instr=pdma_abs) {
+
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(0), se, data_packing, trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23: 12 */ sysram_skip_addr,
+              /*  11:  0 */ sysram_continous_addr);
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        /* Check if sysram_mem_start_addr is aligned. All other restrictions are validated via
+           asm_rules. */
+        check_sysram_alignment(nargs[6].value());
+
+        /* Create the relocation addend from trace bit ... */
+        unsigned addend = nargs[4].value();
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[6].set_value((nargs[6].value())+addend);
+
+        /* Since the trace is merged to the address, remove it. */
+        nargs.erase(nargs.begin() + 4, nargs.begin() + 5);
+
+        b.push_back(createInstr("pdma",nargs));
+        return b;
+      };
+
+    /*               1, 2, 3, 4, 5, 6,  7,  8,  9, 10, 11, 12  */
+    syntax = ("pdma %f %f %f %f %f, %f, %f, %f, %f, %f, %f, %f",
+               /* 1 */ se,
+               /* 2 */ data_packing,
+               /* 3 */ trans_type,
+               /* 4 */ sync_async,
+               /* 5 */ pdma_trace,
+               /* 6 */ vector_len,
+               /* 7 */ sysram_mem_start_addr,
+               /* 8 */ opram_mem_start_addr,
+               /* 9 */ opram_skip_addr,
+               /* 10 */ opram_continuous_addr,
+               /* 11 */ sysram_skip_addr,
+               /* 12 */ sysram_continous_addr
+             );
+
+    asm_rules = R_valid_pdma_operands;
+  }
+
+  define (instr=pdma_ind) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(1), se, data_packing, trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23: 12 */ sysram_skip_addr,
+              /*  23: 12 */ sysram_continous_addr);
+
+    assemble = false;
+
+                /*        1, 2, 3, 4, 5, 6,  7, 8,  9,  10, 11, 12  */
+    dsyntax = ("pdma.ind %f %f %f %f %f, %f, %f, %f, %f, %f, %f, %f",
+                /* 1 */ se,
+                /* 2 */ data_packing,
+                /* 3 */ trans_type,
+                /* 4 */ sync_async,
+                /* 5 */ pdma_trace(sysram_mem_start_addr&1),
+                /* 6 */ vector_len,
+                /* 7 */ sysram_mem_start_addr(sysram_mem_start_addr&0xfffffffc),
+                /* 8 */ ds_src_ind(opram_mem_start_addr),
+                /* 9 */ opram_skip_addr,
+                /* 10 */ opram_continuous_addr,
+                /* 11 */ sysram_skip_addr,
+                /* 12 */ sysram_continous_addr
+              );
+
+    action = { };
+  }
+
+  define (instr=pdma_ind_abs) {
+
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(1), se, data_packing, trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23: 12 */ sysram_skip_addr,
+              /*  11:  0 */ sysram_continous_addr);
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        /* Check if sysram_mem_start_addr is aligned. All other restrictions are validated via
+           asm_rules. */
+        check_sysram_alignment(nargs[6].value());
+
+        /* Create the relocation addend from trace bit ... */
+        unsigned addend = nargs[4].value();
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[6].set_value((nargs[6].value())+addend);
+
+        /* Since the trace bit is merged to the address, remove it. */
+        nargs.erase(nargs.begin() + 4, nargs.begin() + 5);
+
+        b.push_back(createInstr("pdma_ind", nargs));
+        return b;
+      };
+
+               /*        1, 2, 3, 4, 5, 6,  7, 8,  9,  10, 11, 12  */
+    syntax = ("pdma.ind %f %f %f %f %f, %f,%f, %f, %f, %f, %f, %f",
+               /* 1 */ se,
+               /* 2 */ data_packing,
+               /* 3 */ trans_type,
+               /* 4 */ sync_async,
+               /* 5 */ pdma_trace,
+               /* 6 */ vector_len,
+               /* 7 */ sysram_mem_start_addr,
+               /* 8 */ opram_mem_start_addr,
+               /* 9 */ opram_skip_addr,
+               /* 10 */ opram_continuous_addr,
+               /* 11 */ sysram_skip_addr,
+               /* 12 */ sysram_continous_addr
+             );
+
+    asm_rules = R_valid_pdma_operands;
+  }
+
+//
+// PDMA flex mode support
+//
+
+#define CP_FLEX    10
+  define (instrfield=data_packing_flex) {
+	bits = (119, 114);
+  }
+
+  define (instrfield=ext_prog) {
+	bits = 23;
+	enumerated = (".no_ext_prog", ".ext_prog");
+  }
+
+  define (instrfield=ds_ext_prog) {
+	pseudo = true;
+	width = 2;
+	enumerated = (".no_ext_prog", ".ext_prog", "");
+  }
+
+  define (instrfield=same_cmp_cnt) {
+	bits = (17, 16);
+	enumerated = (".2words", ".4words", ".6words", ".8words");
+  }
+
+  define (instrfield=ds_comma) {
+	pseudo = true;
+	width = 1;
+	enumerated = ("", ",");
+  }
+
+  define (instrfield=tram_start_addr) { bits = (15, 0); }
+
+  void check_trans_type_opram2sysram(unsigned type) {
+    if (type == 0) {
+       error(0, "illegal pdma flex instruction, trans_type is .sysram2opram but operands match the OPRAM to SYSRAM version");
+    }
+  }
+
+  void check_trans_type_sysram2opram(unsigned type) {
+    if (type == 1) {
+       error(0, "illegal pdma flex instruction, trans_type is .opram2sysram but operands match the SYSRAM to OPRAM version");
+    }
+  }
+
+  define (instr=pdma_flex) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(0), se, data_packing_flex(CP_FLEX), trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23     */ ext_prog,
+              /*  17: 16 */ same_cmp_cnt,
+              /*  15:  0 */ tram_start_addr
+    );
+
+    /*                     1  2  3  4  5  6  7   8   9            10   11  12 */
+    dsyntax = ("pdma.flex %f %f %f %f %f %f, %f, %f, %f_%f_%f_%f, %f, %f%f %f%f%f%f",
+                /*  1 */ se,
+                /*  2 */ trans_type,
+                /*  3 */ sync_async,
+                /*  4 */ pdma_trace(sysram_mem_start_addr&1),
+                /*  5 */ ds_ext_prog(trans_type > 0 ? 2 : ext_prog),
+                /*  6 */ same_cmp_cnt,
+                /*  7 */ vector_len,
+                /*  8 */ sysram_mem_start_addr(sysram_mem_start_addr&0xfffffffc),
+                /*  9 */ DS_RAM1(opram_mem_start_addr),
+                /* 10 */ opram_skip_addr,
+                /* 11 */ opram_continuous_addr, ds_comma(trans_type > 0 ? 1 : 0),
+                /* 12 */ DS0_MEM2(tram_start_addr)
+              );
+
+    assemble = false;
+
+    action = { };
+  }
+
+
+// pdma.flex    se .sysram2opram sync_async trace ext_prog same_cmp_cnt, vec_sz, sysram_mem_start_addr, opram_mem_start_addr, opram_skip_addr, opram_continuous_addr
+  define (instr=pdma_flex_from_sysram_abs) {
+
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(0), se, data_packing_flex(CP_FLEX), trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23     */ ext_prog,
+              /*  17: 16 */ same_cmp_cnt,
+              /*  15:  0 */ tram_start_addr(0)
+    );
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        check_trans_type_sysram2opram(nargs[1].value());
+
+        /* Check if sysram_mem_start_addr is aligned. All other restrictions are validated via
+           asm_rules. */
+        
+        check_sysram_alignment(nargs[7].value());
+
+        /* Argument order should be in the same order as listed in the 'pdma_flex' base
+           instruction field definition. So push 'ext_prog' and 'same_cmp_cnt' fields
+           towards the end. */
+        nargs.push_back(nargs[4].value());
+        nargs.push_back(nargs[5].value());
+
+        /* tram_start_addr is 0 when the transfer is .sysram2opram. So include that
+           in the argument list. */
+        nargs.push_back(0);
+
+        /* Create the relocation addend from trace bit ... */
+        unsigned addend = nargs[3].value();
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[7].set_value((nargs[7].value())+addend);
+
+        /* Since the trace bit is merged to the address, remove it. Since we have
+           re-ordered the argument list, remove the duplicate fields also. */
+        nargs.erase(nargs.begin() + 3, nargs.begin() + 6);
+
+        b.push_back(createInstr("pdma_flex", nargs));
+        return b;
+      };
+
+    /*                    1  2  3  4  5  6   7   8   9  10  11 */
+    syntax = ("pdma.flex %f %f %f %f %f %f, %f, %f, %f, %f, %f",
+                /*  1 */ se,
+                /*  2 */ trans_type,
+                /*  3 */ sync_async,
+                /*  4 */ pdma_trace,
+                /*  5 */ ext_prog,
+                /*  6 */ same_cmp_cnt,
+                /*  7 */ vector_len,
+                /*  8 */ sysram_mem_start_addr,
+                /*  9 */ opram_mem_start_addr,
+                /* 10 */ opram_skip_addr,
+                /* 11 */ opram_continuous_addr
+              );
+
+    asm_rules = R_valid_pdma_flex_operands;
+  }
+
+// pdma.flex    se .opram2sysram sync_async trace same_cmp_cnt, vec_sz, sysram_mem_start_addr, opram_mem_start_addr, opram_skip_addr, opram_continuous_addr, tram_start_addr
+  define (instr=pdma_flex_from_opram_abs) {
+
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(0), se, data_packing_flex(CP_FLEX), trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23     */ ext_prog(0),
+              /*  17: 16 */ same_cmp_cnt,
+              /*  15:  0 */ tram_start_addr
+    );
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        check_trans_type_opram2sysram(nargs[1].value());
+        /* Check if sysram_mem_start_addr is aligned. All other restrictions are validated via
+           asm_rules. */
+        check_sysram_alignment(nargs[6].value());
+
+        /* Create the relocation addend from trace bit ... */
+        unsigned addend = nargs[3].value();
+
+        /* Argument order should be in the same order as listed in the 'pdma_flex' base
+           instruction field definition. So push 'ext_prog' and 'same_cmp_cnt' and
+           'tram_start_addr' fields towards the end. */
+        nargs.push_back(nargs[4].value());
+        nargs.push_back(nargs[10].value());
+
+        /* ext_prog is 0 when the transfer is .sysram2opram. So include that
+           in the argument list. */
+        nargs[10].set_value(0);
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[6].set_value((nargs[6].value())+addend);
+
+        /* Since the trace bit is merged to the address, remove it. Since we have
+           re-ordered the argument list, remove the duplicate fields also. */
+        nargs.erase(nargs.begin() + 3, nargs.begin() + 5);
+
+        b.push_back(createInstr("pdma_flex", nargs));
+        return b;
+      };
+
+    /*                    1  2  3  4  5  6   7    8   9  10  11 */
+    syntax = ("pdma.flex %f %f %f %f %f, %f, %f, %f, %f, %f, %f",
+                /*  1 */ se,
+                /*  2 */ trans_type,
+                /*  3 */ sync_async,
+                /*  4 */ pdma_trace,
+                /*  5 */ same_cmp_cnt,
+                /*  6 */ vector_len,
+                /*  7 */ sysram_mem_start_addr,
+                /*  8 */ opram_mem_start_addr,
+                /*  9 */ opram_skip_addr,
+                /* 10 */ opram_continuous_addr,
+                /* 11 */ tram_start_addr
+              );
+
+    asm_rules = R_valid_pdma_flex_operands;
+  }
+
+  define (instr=pdma_flex_ind) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(1), se, data_packing_flex(CP_FLEX), trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23     */ ext_prog,
+              /*  17: 16 */ same_cmp_cnt,
+              /*  15:  0 */ tram_start_addr
+    );
+
+    /*                         1  2  3  4  5  6  7   8   9   10  11   12 */
+    dsyntax = ("pdma.flex.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f %f%f%f%f",
+                /*  1 */ se,
+                /*  2 */ trans_type,
+                /*  3 */ sync_async,
+                /*  4 */ pdma_trace(sysram_mem_start_addr&1),
+                /*  5 */ ds_ext_prog(trans_type > 0 ? 2 : ext_prog),
+                /*  6 */ same_cmp_cnt,
+                /*  7 */ vector_len,
+                /*  8 */ sysram_mem_start_addr(sysram_mem_start_addr&0xfffffffc),
+                /*  9 */ ds_src_ind(opram_mem_start_addr),
+                /* 10 */ opram_skip_addr,
+                /* 11 */ opram_continuous_addr, ds_comma(trans_type > 0 ? 1 : 0),
+                /* 12 */ DS0_MEM2(tram_start_addr)
+              );
+
+    assemble = false;
+
+    action = { };
+  }
+
+
+// pdma.flex.ind    se .sysram2opram sync_async trace ext_prog same_cmp_cnt, vec_sz, sysram_mem_start_addr, opram_mem_start_addr, opram_skip_addr, opram_continuous_addr
+  define (instr=pdma_flex_from_sysram_ind_abs) {
+
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(1), se, data_packing_flex(CP_FLEX), trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23     */ ext_prog,
+              /*  17: 16 */ same_cmp_cnt,
+              /*  15:  0 */ tram_start_addr(0)
+    );
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        check_trans_type_sysram2opram(nargs[1].value());
+
+        /* Check if sysram_mem_start_addr is aligned. All other restrictions are validated via
+           asm_rules. */
+        
+        check_sysram_alignment(nargs[7].value());
+
+        /* Argument order should be in the same order as listed in the 'pdma_flex' base
+           instruction field definition. So push 'ext_prog' and 'same_cmp_cnt' and
+           'tram_start_addr' fields towards the end. */
+        nargs.push_back(nargs[4].value());
+        nargs.push_back(nargs[5].value());
+
+        /* tram_start_addr is 0 when the transfer is .sysram2opram. So include that
+           in the argument list. */
+        nargs.push_back(0);
+
+        /* Create the relocation addend from trace bit ... */
+        unsigned addend = nargs[3].value();
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[7].set_value((nargs[7].value())+addend);
+
+        /* Since the trace bit is merged to the address, remove it. Since we have
+           re-ordered the argument list, remove the duplicate fields also. */
+        nargs.erase(nargs.begin() + 3, nargs.begin() + 6);
+
+        b.push_back(createInstr("pdma_flex_ind", nargs));
+        return b;
+      };
+
+    /*                        1  2  3  4  5  6  7   8   9   10  11 */
+    syntax = ("pdma.flex.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f",
+                /*  1 */ se,
+                /*  2 */ trans_type,
+                /*  3 */ sync_async,
+                /*  4 */ pdma_trace,
+                /*  5 */ ext_prog,
+                /*  6 */ same_cmp_cnt,
+                /*  7 */ vector_len,
+                /*  8 */ sysram_mem_start_addr,
+                /*  9 */ opram_mem_start_addr,
+                /* 10 */ opram_skip_addr,
+                /* 11 */ opram_continuous_addr
+              );
+
+    asm_rules = R_valid_pdma_flex_operands;
+  }
+
+// pdma.flex    se .opram2sysram sync_async trace same_cmp_cnt, vec_sz, sysram_mem_start_addr, opram_mem_start_addr, opram_skip_addr, opram_continuous_addr, tram_start_addr
+  define (instr=pdma_flex_from_opram_ind_abs) {
+
+    fields = (
+              /* 127:112 */ opcode(0x28), immed_or_reg_src_fld(1), se, data_packing_flex(CP_FLEX), trans_type, sync_async,
+              /* 111: 96 */ vector_len,
+              /*  95: 66 + 65 + 64 */ sysram_mem_start_addr, /* + reserved + pdma_trace, */
+              /*  63: 48 */ opram_mem_start_addr,
+              /*  47: 36 */ opram_skip_addr,
+              /*  35: 24 */ opram_continuous_addr,
+              /*  23     */ ext_prog(0),
+              /*  17: 16 */ same_cmp_cnt,
+              /*  15:  0 */ tram_start_addr
+    );
+
+    alias_action = func(const InstrArgs &args) {
+        InstrBundle b;
+        InstrArgs nargs = args;
+
+        check_trans_type_opram2sysram(nargs[1].value());
+        /* Check if sysram_mem_start_addr is aligned. All other restrictions are validated via
+           asm_rules. */
+        check_sysram_alignment(nargs[6].value());
+
+        /* Create the relocation addend from trace bit ... */
+        unsigned addend = nargs[3].value();
+
+        /* Argument order should be in the same order as listed in the 'pdma_flex' base
+           instruction field definition. So push 'ext_prog' and 'same_cmp_cnt' and
+           'tram_start_addr' fields towards the end. */
+        nargs.push_back(nargs[4].value());
+        nargs.push_back(nargs[10].value());
+
+        /* ext_prog is 0 when the transfer is .sysram2opram. So include that
+           in the argument list. */
+        nargs[10].set_value(0);
+
+        /* ... and add them to the 32 bit sysram_mem_start address. */
+        if (addend) nargs[6].set_value((nargs[6].value())+addend);
+
+        /* Since the trace bit is merged to the address, remove it. Since we have
+           re-ordered the argument list, remove the duplicate fields also. */
+        nargs.erase(nargs.begin() + 3, nargs.begin() + 5);
+
+        b.push_back(createInstr("pdma_flex_ind", nargs));
+        return b;
+      };
+
+    /*                        1  2  3  4  5  6   7   8   9   10  11 */
+    syntax = ("pdma.flex.ind %f %f %f %f %f, %f, %f, %f, %f, %f, %f",
+                /*  1 */ se,
+                /*  2 */ trans_type,
+                /*  3 */ sync_async,
+                /*  4 */ pdma_trace,
+                /*  5 */ same_cmp_cnt,
+                /*  6 */ vector_len,
+                /*  7 */ sysram_mem_start_addr,
+                /*  8 */ opram_mem_start_addr,
+                /*  9 */ opram_skip_addr,
+                /* 10 */ opram_continuous_addr,
+                /* 11 */ tram_start_addr
+              );
+
+    asm_rules = R_valid_pdma_flex_operands;
+  }
+
+
+}
+

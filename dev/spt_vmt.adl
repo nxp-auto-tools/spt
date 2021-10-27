@@ -1,0 +1,940 @@
+/*
+ * Copyright 2020-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt_vmt) {
+/*
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .no_sq2s2                  opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .no_sq2s2                  opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add,           src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .shift_sq2s2(value)        opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .shift_sq2s2(value)        opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add,           src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .off_sq2s2(off_wr)         opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .off_sq2s2(off_wr)         opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add,           src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .off_sq2s2(imm_re, imm_im) opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .off_sq2s2(imm_re, imm_im) opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add,           src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .vec_sq2s2(vec_src)        opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+vmt   in_dattyp rst_acc ip_pack op_pack opsq1 opsq2s1 .vec_sq2s2(vec_src)        opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add,           src_add_inc, dest_add_inc
+*/
+
+ define (instrfield=extra_val) {
+    // VMT
+    width = 16;
+    pseudo = true;
+    disassemble = false;
+  }
+
+ define (instrfield=extra_val2) {
+    // VMT
+    width = 16;
+    pseudo = true;
+    disassemble = false;
+  }
+
+  define (instrfield=rst_acc_vmt) {
+    // VMT
+    bits = 121;
+    enumerated = (".no_rst", ".rst_sum");
+  }
+
+  define (instrfield=in_dattyp_vmt) {
+    // VMT
+    bits = 120;
+    enumerated = (".real",".cmplx");
+    value = ".real";
+  }
+
+    define (instrfield=opsq1) {
+    // VMT
+    bits = 119;
+    enumerated = (".no_sq1", ".sq1");
+  }
+
+    define (instrfield=opsq2s1) {
+    // VMT
+    bits = (118,117);
+    enumerated = (".no_sq2s1", ".abs_sq2s1", ".mag_sq2s1", ".conj_sq2s1");
+  }
+
+    define (instrfield=opsq2s2) {
+    // VMT
+    bits = (116,114);
+    enumerated = (".no_sq2s2", ".shft_sq2s2", ".wr_off_sq2s2", "imm_off_sq2s2", ".vec_sq2s2", ".norm_sq2s2", ".angle_sq2s2");
+  }
+
+    define (instrfield=opsq2s3) {
+    // VMT
+    bits = 113;
+    enumerated = (".no_sq2s3", ".sum_sq2s3");
+  }
+
+    define (instrfield=op_pack) {
+    // VMT
+    bits = 112;
+    enumerated = (".op_off", ".op_on");
+  }
+
+    define (instrfield=ip_pack) {
+    // VMT
+    bits = (111,110);
+    enumerated = (".in_24real", ".in_24im", ".in_48");
+  }
+
+    define (instrfield=imdt_offset_val_im) {
+    // VMT
+    bits = (31,16);
+  }
+
+    define (instrfield=extra_offset_val_im) {
+    // VMT
+    bits = (15,0);
+  }
+
+  define (instrfield=mult_s_exp_n_val_addr) {
+    // VMT
+    bits = (63,48);
+  }
+
+  define (instrfield=imdt_angle_steps) {
+    // VMT
+    pseudo = true;
+    width = 16;
+    valid_ranges = (1,20);
+  }
+
+
+  // vmt.sq1 in_dattyp ip_pack op_pack, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+  define (instr=vmt_sq1) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt(0),in_dattyp_vmt,opsq1(1),opsq2s1(0),opsq2s2(0),opsq2s3(0),
+        op_pack,ip_pack,ima_fld(0),vec_sz,
+        src_add,
+        dest_add,
+        mult_s_exp_n_val_addr(0),
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im(0)
+    );
+
+    dsyntax = ("vmt.sq1  %f %f %f, %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt,ip_pack,op_pack,
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.sq1  %p %p %p, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, ip_pack, op_pack,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_vmt);
+
+    action = { };
+  }
+
+  // vmt.sq1.ind in_dattyp ip_pack op_pack, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+  define (instr=vmt_sq1_ind) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt(0),in_dattyp_vmt,opsq1(1),opsq2s1(0),opsq2s2(0),opsq2s3(0),
+        op_pack,ip_pack,ima_fld(1),vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr(0),
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im(0)
+    );
+
+    dsyntax = ("vmt.sq1.ind %f %f %f, %f, %f, %f, %f",
+        in_dattyp_vmt,ip_pack,op_pack,
+        vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.sq1.ind  %p %p %p, %f,%f,%f,%f",
+        in_dattyp_vmt, ip_pack, op_pack,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = { };
+  }
+
+  // vmt.nosq2s2
+  define (instr=vmt_nosq2s2) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(0),opsq2s3,
+        op_pack,ip_pack,ima_fld(0),vec_sz,
+        src_add,
+        dest_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im(0)
+    );
+
+    dsyntax = ("vmt.no_sq2s2  %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        opsq2s3, ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.no_sq2s2  %p %p %p %p %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, opsq2s3, mult_s_exp_n_val_addr,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_vmt, R_vec_sz_vmt);
+
+    action = { };
+  }
+
+  define (instr=vmt_nosq2s2_s3opt) {
+
+    width = 128;
+    alias = vmt_nosq2s2(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                        opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                        ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                        dest_add(dest_add), mult_s_exp_n_val_addr(0),
+                        src_add_inc(src_add_inc), dest_add_inc(dest_add_inc)
+    );
+
+    syntax = ("vmt.no_sq2s2  %p %p %p %p %f %f, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, opsq2s3,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  // vmt.no_sq2s2.ind in_dattyp rst_acc ip_pack op_pack opsq2s1 opsq2s3 mult_s_exp_n_val_addr, vec_sz, src_add, src_add_inc, dest_add_inc
+  define (instr=vmt_nosq2s2_ind) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(0),opsq2s3, 
+        op_pack,ip_pack,ima_fld(1),vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im(0)
+    );
+
+    dsyntax = ("vmt.no_sq2s2.ind %f %f %f %f %f %f %f, %f, %f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        opsq2s3, ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.no_sq2s2.ind %p %p %p %p %f %f %f, %f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, opsq2s3, mult_s_exp_n_val_addr,
+        vec_sz, src_add, 
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = { };
+  }
+
+  // vmt.no_sq2s2.ind in_dattyp rst_acc ip_pack op_pack opsq2s1 , vec_sz, src_add, src_add_inc, dest_add_inc
+  define (instr=vmt_nosq2s2_ind_s3opt) {
+
+    width = 128;
+    alias = vmt_nosq2s2_ind(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                            opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                            ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                            mult_s_exp_n_val_addr(0),
+                            src_add_inc(src_add_inc), dest_add_inc(dest_add_inc)
+    );
+
+    syntax = ("vmt.no_sq2s2.ind %p %p %p %p %f %f, %f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, opsq2s3,
+        vec_sz, src_add, 
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  // vmt.shift_sq2s2
+  define (instr=vmt_shift_sq2s2) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(1),opsq2s3, 
+        op_pack,ip_pack,ima_fld(0),vec_sz,
+        src_add,
+        dest_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.shift_sq2s2 %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.shift_sq2s2 %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3, mult_s_exp_n_val_addr,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_vmt, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_shift_sq2s2_s3opt) {
+
+    width = 128;
+
+    alias = vmt_shift_sq2s2(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                            opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                            ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                            dest_add(dest_add), mult_s_exp_n_val_addr(0),
+                            src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+                            extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.shift_sq2s2 %p %p %p %p %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  define (instr=vmt_shift_sq2s2_ind) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(1),opsq2s3, 
+        op_pack,ip_pack,ima_fld(1),vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.shift_sq2s2.ind %f %f %f %f %f %f %f %f, %f, %f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.shift_sq2s2.ind %p %p %p %p %f %f %f %f, %f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr, vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = {};
+ }
+
+  define (instr=vmt_shift_sq2s2_ind_s3opt) {
+
+    width = 128;
+
+    alias = vmt_shift_sq2s2_ind(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                                opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                                ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                                mult_s_exp_n_val_addr(0),
+                                src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+                                extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.shift_sq2s2.ind %p %p %p %p %f %f %f, %f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  // vmt.off_sq2s2
+  define (instr=vmt_wr_off_sq2s2) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(2),opsq2s3, 
+        op_pack,ip_pack,ima_fld(0),vec_sz,
+        src_add,
+        dest_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.off_sq2s2 %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.off_sq2s2  %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_vmt, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_wr_off_sq2s2_s3opt) {
+
+    width = 128;
+
+    alias = vmt_wr_off_sq2s2(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                             opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                             ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                             dest_add(dest_add), mult_s_exp_n_val_addr(0),
+                             src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+                             extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.off_sq2s2 %p %p %p %p %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  define (instr=vmt_wr_off_sq2s2_ind) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(2),opsq2s3, 
+        op_pack,ip_pack,ima_fld(1),vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.off_sq2s2.ind %f %f %f %f %f %f %f %f, %f, %f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.off_sq2s2.ind %p %p %p %p %f %f %f %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_wr_off_sq2s2_ind_s3opt) {
+
+    width = 128;
+
+    alias = vmt_wr_off_sq2s2_ind(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                                 opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                                 ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                                 mult_s_exp_n_val_addr(0),
+                                 src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+                                 extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.off_sq2s2.ind %p %p %p %p %f %f %f, %f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  define (instr=vmt_imm_off_sq2s2) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(3),opsq2s3, 
+        op_pack,ip_pack,ima_fld(0),vec_sz,
+        src_add,
+        dest_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im,
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.off_sq2s2 %f %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,imdt_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.off_sq2s2 %p %p %p %p %f %f %f %f %f,%f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, imdt_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_vmt, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_imm_off_sq2s2_s3opt) {
+
+    width = 128;
+
+    alias = vmt_imm_off_sq2s2(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                              opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                              ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                              dest_add(dest_add), mult_s_exp_n_val_addr(0),
+                              src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+                              imdt_offset_val_im(imdt_offset_val_im),
+                              extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.off_sq2s2 %p %p %p %p %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, imdt_offset_val_im, opsq2s3,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  define (instr=vmt_imm_off_sq2s2_ind) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(3),opsq2s3, 
+        op_pack,ip_pack,ima_fld(1),vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im,
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.off_sq2s2.ind %f %f %f %f %f %f %f %f %f,%f,%f,%f,%f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,imdt_offset_val_im,
+        opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz,
+        src_add,
+        src_add_inc,dest_add_inc);
+
+    syntax = ("vmt.off_sq2s2.ind %p %p %p %p %f %f %f %f %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, imdt_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_imm_off_sq2s2_ind_s3opt) {
+
+    width = 128;
+
+    alias = vmt_imm_off_sq2s2_ind(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+                                  opsq2s1(opsq2s1), opsq2s3(opsq2s3), op_pack(op_pack),
+                                  ip_pack(ip_pack), vec_sz(vec_sz), src_add(src_add),
+                                  mult_s_exp_n_val_addr(0),
+                                  src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+                                  imdt_offset_val_im(imdt_offset_val_im),
+                                  extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.off_sq2s2.ind %p %p %p %p %f %f %f %f, %f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, imdt_offset_val_im, opsq2s3,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  // vmt.vec_sq2s2
+  define (instr=vmt_vec_sq2s2) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(4),opsq2s3, 
+        op_pack,ip_pack,ima_fld(0),vec_sz,
+        src_add,
+        dest_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.vec_sq2s2 %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.vec_sq2s2 %p %p %p %p %f %f %f %f,%f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_vmt, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_vec_sq2s2_s3opt) {
+
+    width = 128;
+    alias = vmt_vec_sq2s2(rst_acc_vmt(rst_acc_vmt),in_dattyp_vmt(in_dattyp_vmt),
+        opsq2s1(opsq2s1),opsq2s3(opsq2s3),
+        op_pack(op_pack),ip_pack(ip_pack),vec_sz(vec_sz),
+        src_add(src_add),
+        dest_add(dest_add),
+        mult_s_exp_n_val_addr(0),
+        src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+        extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.vec_sq2s2 %p %p %p %p %f %f %f,%f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_oram_aligned, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  define (instr=vmt_vec_sq2s2_ind) {
+
+    width = 128;
+    fields = (opcode(0x26),rst_acc_vmt,in_dattyp_vmt,opsq1(0),opsq2s1,opsq2s2(4),opsq2s3, 
+        op_pack,ip_pack,ima_fld(1),vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc,dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.vec_sq2s2.ind %f %f %f %f %f %f %f %f, %f, %f, %f, %f",
+        in_dattyp_vmt,rst_acc_vmt,ip_pack,op_pack,opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.vec_sq2s2.ind %p %p %p %p %f %f %f %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_vec_sq2s2_ind_s3opt) {
+
+    width = 128;
+    alias = vmt_vec_sq2s2_ind(rst_acc_vmt(rst_acc_vmt),in_dattyp_vmt(in_dattyp_vmt),
+        opsq2s1(opsq2s1),opsq2s3(opsq2s3),
+        op_pack(op_pack),ip_pack(ip_pack),vec_sz(vec_sz),
+        src_add(src_add),
+        mult_s_exp_n_val_addr(0),
+        src_add_inc(src_add_inc),dest_add_inc(dest_add_inc),
+        extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.vec_sq2s2.ind %p %p %p %p %f %f %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  // vmt.norm_sq2s2
+   define (instr=vmt_norm_sq2s2) {
+
+    width = 128;
+    fields = (opcode(0x26), rst_acc_vmt, in_dattyp_vmt,
+        opsq1(0), opsq2s1, opsq2s2(5), opsq2s3, 
+        op_pack, ip_pack, ima_fld(0), vec_sz,
+        src_add, dest_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc, dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.norm_sq2s2 %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack, opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.norm_sq2s2 %p %p %p %p %f %f %f %f,%f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_vmt, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+   define (instr=vmt_norm_sq2s2_s3opt) {
+
+    width = 128;
+    alias = vmt_norm_sq2s2(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+        opsq2s1(opsq2s1), opsq2s3(opsq2s3),
+        op_pack(op_pack), ip_pack(ip_pack), vec_sz(vec_sz),
+        src_add(src_add), dest_add(dest_add),
+        mult_s_exp_n_val_addr(0),
+        src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+        extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.norm_sq2s2 %p %p %p %p %f %f %f ,%f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_oram_aligned, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  define (instr=vmt_norm_sq2s2_ind) {
+
+    width = 128;
+    fields = (opcode(0x26), rst_acc_vmt, in_dattyp_vmt, opsq1(0), opsq2s1, opsq2s2(5), opsq2s3, 
+        op_pack, ip_pack, ima_fld(1), vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr,
+        src_add_inc, dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.norm_sq2s2.ind %f %f %f %f %f %f %f %f, %f, %f, %f, %f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack, opsq2s1,
+        extra_offset_val_im,
+        opsq2s3,
+        ds_wr(mult_s_exp_n_val_addr),
+        vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.norm_sq2s2.ind %p %p %p %p %f %f %f %f,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        mult_s_exp_n_val_addr,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_norm_sq2s2_ind_s3opt) {
+
+    width = 128;
+    alias = vmt_norm_sq2s2_ind(rst_acc_vmt(rst_acc_vmt), in_dattyp_vmt(in_dattyp_vmt),
+        opsq2s1(opsq2s1), opsq2s3(opsq2s3),
+        op_pack(op_pack), ip_pack(ip_pack), vec_sz(vec_sz),
+        src_add(src_add),
+        mult_s_exp_n_val_addr(0),
+        src_add_inc(src_add_inc), dest_add_inc(dest_add_inc),
+        extra_offset_val_im(extra_offset_val_im)
+    );
+
+    syntax = ("vmt.norm_sq2s2.ind %p %p %p %p %f %f %f ,%f,%f,%f,%f",
+        in_dattyp_vmt, rst_acc_vmt, ip_pack, op_pack,
+        opsq2s1, extra_offset_val_im, opsq2s3,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt, R_sq2s3_vmt);
+  }
+
+  // vmt.angle_sq2s2
+  define (instr=vmt_angle_sq2s2) {
+
+    width = 128;
+    fields = (opcode(0x26), rst_acc_vmt(0), in_dattyp_vmt, opsq1(0), opsq2s1(0), opsq2s2(6), opsq2s3(0), 
+        op_pack, ip_pack, ima_fld(0), vec_sz,
+        src_add,
+        dest_add,
+        mult_s_exp_n_val_addr(0),
+        src_add_inc, dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.angle_sq2s2 %f %f %f %f , %f, %f_%f_%f_%f, %f%f_%f%f, %f, %f",
+        in_dattyp_vmt, ip_pack, op_pack,
+        imdt_angle_steps(extra_offset_val_im),
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_MEM(dest_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.angle_sq2s2 %p %p %p %f,%f,%f,%f,%f,%f",
+        in_dattyp_vmt, ip_pack, op_pack,
+        extra_offset_val_im,
+        vec_sz, src_add, dest_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ram_aligned, R_dest_oram_aligned, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+  define (instr=vmt_angle_sq2s2_ind) {
+
+    width = 128;
+    fields = (opcode(0x26), rst_acc_vmt(0), in_dattyp_vmt, opsq1(0), opsq2s1(0), opsq2s2(6), opsq2s3(0),
+        op_pack, ip_pack, ima_fld(1), vec_sz,
+        src_add,
+        mult_s_exp_n_val_addr(0),
+        src_add_inc, dest_add_inc,
+        imdt_offset_val_im(0),
+        extra_offset_val_im
+    );
+
+    dsyntax = ("vmt.angle_sq2s2.ind %f %f %f %f , %f, %f, %f, %f",
+        in_dattyp_vmt, ip_pack, op_pack,
+        imdt_angle_steps(extra_offset_val_im),
+        vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc);
+
+    syntax = ("vmt.angle_sq2s2.ind %p %p %p %f,%f,%f,%f,%f",
+        in_dattyp_vmt, ip_pack, op_pack,
+        extra_offset_val_im,
+        vec_sz, src_add,
+        src_add_inc, dest_add_inc);
+
+    asm_rules = (R_src_ind, R_vec_sz_vmt);
+
+    action = {};
+  }
+
+// Rules to be used by instruction definitions to check operand restrictions
+  define (assembler) {
+
+    // VEC_SZ should be an even value when data packing is enabled.
+    define (rule=R_vec_sz_vmt) {
+      action = func(InstrInfo ii) {
+        if ((in_dattyp_vmt == 0) && (ip_pack == 2) && (vec_sz % 2 != 0)) {
+          // When input data types is real and when input data is packed, vec_sz should be even.
+          error(0, "illegal operand vec_sz: " , vec_sz, ", expected an even size when input is packed.");
+        }
+      };
+    }
+
+    // Verify DEST_ADD for VMT operations except cordic angle
+    define (rule=R_dest_vmt) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if (opsq2s3 == 1) { // vector sum and scale
+          // dest_add must be OPRAM or a work register
+          if ((atype != MEM_WR) && ((atype != MEM_OPRAM) || (addr & SLICE_MASK))) {
+            error(0, "illegal operand dest_add for vector sum and scale: " + get_mem_name(addr) +
+                     ", expected work register or aligned Operand RAM address (e.g. WR_x, OR_x_y_0).");
+          }
+        } else { // stage 3 is disabled, no vector sum and scale
+          // normalize and dual vector sum require the result to be written in OPRAM
+          if ((ii.instrName() == "vmt_norm_sq2s2") || (ii.instrName() == "vmt_vec_sq2s2")) {
+            if ((atype != MEM_OPRAM) || (addr & SLICE_MASK)) {
+              error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                       ", expected aligned Operand RAM address (e.g. OR_x_y_0).");
+            }
+          } else {
+            // dest_add must an aligned OPRAM or TRAM address
+            if ((atype != MEM_OPRAM && atype != MEM_TRAM) || (addr & SLICE_MASK)) {
+              error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                       ", expected aligned Operand RAM or Twiddle RAM (e.g. OR_x_y_0, TR_x_y_0).");
+            }
+          }
+        }
+      };
+    }
+
+    define (rule=R_sq2s3_vmt) {
+      action = func(InstrInfo ii) {
+        if (opsq2s3 == 1) {
+          error(0, "operand missing mult_s_exp_n_val_addr: .sum_sq2s3 is enabled by the instruction.");
+        }
+      };
+    }
+  }; // end of assembler block for asm_rules
+
+} // EOF
