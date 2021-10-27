@@ -1,0 +1,2484 @@
+/*
+ * Copyright 2020-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt_fft) {
+
+     define (instrfield=in_dattyp) {
+        // WIN, RDX4, RDX2, FIR, SCP
+        bits = (121);
+        enumerated = (".real",".cmplx");
+        value = ".real";
+      }
+
+    define (instrfield=win_type) {
+        // WIN, FIR
+        bits = (120,119);
+        enumerated = (reserved,".cmplx_win",".real_win_im_tram",".real_win_real_tram");
+      }
+
+    define (instrfield=win_type_rdx) {
+        // RDX4, IRDX4
+        bits = (120,119);
+        enumerated = (".no_win",".cmplx_win",".real_win_im_tram",".real_win_real_tram");
+      }
+
+    define (instrfield=re_im_coeff) {
+        // SCP
+        bits = (120,119);
+        enumerated = (".coef_cmplx", reserved, ".coef_im",".coef_re");
+      }
+
+    define (instrfield=fft_rnd) {
+        // RDX4, IRDX4
+        bits = (118,116);
+        enumerated = (".round0",".round1",".round2",".round3",".round4",".round5");
+        display = dec;
+      }
+
+    define (instrfield=fft_rnd_rdx2) {
+        // RDX2, IRDX2
+        bits = (118,116);
+        enumerated = (reserved,".round1",".round2",".round3",".round4",".round5");
+        display = dec;
+      }
+
+    define (instrfield=init) {
+        // FIR
+        bits = 116;
+        enumerated = (".zero_init",".const_init");
+        value = ".zero_init";
+      }
+
+    define (instrfield=no_of_taps) {
+        // FIR
+        bits = (115,112);
+        display = dec;
+      }
+
+    define (instrfield=real_fft) {
+          // RDX2
+        bits = 115;
+        enumerated = (".nosplit",".opsplit");
+        value = ".nosplit";
+      }
+
+    define (instrfield=adptv) {
+        // RDX2-4
+        bits = 114;
+        enumerated = (".noadptv",".adptv");
+      }
+
+    define (instrfield=adptv_shft) {
+        // RDX4, RDX2
+        bits = 113;
+        enumerated = (".15down",".23down");
+      }
+
+    define (instrfield=quad_ext) {
+        // RDX4, RDX2
+        bits = 112;
+        enumerated = (".noqext",".qext");
+        value = ".noqext";
+      }
+
+    define (instrfield=vec_sz) {
+        // WIN, RDX4, FIR
+        bits = (108,96);
+        display = dec;
+      }
+
+    define (instrfield=mult_coef_add) {
+        // WIN, RDX4, RDX2
+        bits = (63,48);
+      }
+
+    define (instrfield=scp_coef_add) {
+        // SCP
+        bits = (63,48);
+      }
+
+    define (instrfield=tap_coef_add) {
+        // FIR
+        bits = (63,48);
+      }
+
+    define (instrfield=cc_im) {
+        // WIN
+        bits = (63,48);
+      }
+
+    define (instrfield=src_add_inc) {
+        // WIN, RDX4, RDX2, FIR, COPY
+        bits = (47,40);
+      }
+
+    define (instrfield=dest_add_inc) {
+        // WIN, RDX4, RDX2, FIR, COPY
+        bits = (39,32);
+      }
+
+    define (instrfield=mca_mod) {
+        // WIN, RDX4
+        bits = (31,28);
+        enumerated = (
+           ".mod0",".mod2",".mod4",".mod8",".mod16",
+           ".mod32",".mod64",".mod128",".mod256",".mod512");
+      }
+
+     define (instrfield=cc_re) {
+        // WIN
+        bits = (31,16);
+      }
+
+    define (instrfield=shft_ofst) {
+        // WIN, RDX4, IRDX4
+        bits = (27,25);
+        enumerated = (".bits_0_5",".bits_6_11",".bits_12_17",".bits_18_23",
+           ".bits_24_29",".bits_30_35",".bits_36_41",".bits_42_47");
+      }
+
+    define (instrfield=adptv_ofst) {
+        // RDX2, IRDX2
+        bits = (27,25);
+        enumerated = (".bits_0_5",".bits_6_11",".bits_12_17",".bits_18_23",
+           ".bits_24_29",".bits_30_35",".bits_36_41",".bits_42_47");
+      }
+
+    define (instrfield=mca_inc) {
+        // WIN, RDX4
+        bits = (24,16);
+      }
+
+    define (instrfield=adptv_wr) {
+        // RDX2-4
+        bits = (15,10);
+        valid_ranges=(0, 47);
+      }
+
+    define (instrfield=shft_wr) {
+        // WIN, RDX4, IRDX4
+        bits = (15,10);
+        valid_ranges=(0, 47);
+      }
+
+    define (instrfield=mult_mod) {
+        // WIN, RDX4
+        bits = (9,8);
+        enumerated = (".immed",".const",".caddr");
+      }
+
+    define (instrfield=shft_src) {
+        // WIN
+        bits = 7;
+        enumerated = (".shft_val",".shft_wr");
+      }
+
+    define (instrfield=shft_val) {
+        // WIN, RDX4, FIR, SCP
+        bits = (6,4);
+        enumerated = ((".nosft",""),".shift1",".shift2",".shift3",".shift4",".shift8");
+      }
+
+    define (instrfield=tw_ovs) {
+        // RDX2-4
+        bits = (3,0);
+        enumerated = (".noovs",".ovs2",".ovs4",".ovs8",".ovs16",".ovs32",".ovs64",".ovs128",".ovs256",".ovs512");
+      }
+
+    unsigned chk_fft_rnd(unsigned rnd){
+        if (rnd == 0)
+            error(0, "fft_rnd must be > 0", rnd);
+        return rnd;
+    }
+
+    unsigned chk_fft_rnd0(unsigned rnd){
+        if (rnd > 0)
+            error(0, "fft_rnd must be .round0 for MULT_MOD=0 and windowing operation");
+        return rnd;
+    }
+
+
+/*
+win  core in_dattyp win_type     =0            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, cc_im, cc_re
+win  core in_dattyp win_type     =0            vec_sz src_add,           src_add_inc, dest_add_inc, cc_im, cc_re
+win  core in_dattyp win_type shft_val          vec_sz src_add, dest_add, src_add_inc, dest_add_inc, cc_im, cc_re
+win  core in_dattyp win_type shft_val          vec_sz src_add,           src_add_inc, dest_add_inc, cc_im, cc_re
+
+win  core in_dattyp win_type     =0            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+win  core in_dattyp win_type     =0            vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+win  core in_dattyp win_type shft_val          vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+win  core in_dattyp win_type shft_val          vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+
+win  core in_dattyp win_type     =0            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+win  core in_dattyp win_type     =0            vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+win  core in_dattyp win_type shft_val          vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+win  core in_dattyp win_type shft_val          vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+  // Win instruction with MultMode == 0.
+  define (instr=win_mm0) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(0),shft_wr(0),mult_mod(0),shft_src(0),
+            in_dattyp,win_type,vec_sz,src_add,dest_add,cc_im,src_add_inc,dest_add_inc,cc_re,shft_val);
+
+    dsyntax = ("win %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f, %f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        cc_im, cc_re);
+
+    syntax = ("win %f %f %f, %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        cc_im,cc_re);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned
+    );
+
+    action = { };
+  }
+
+  define (instr=win_mm0_ind) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(1),shft_wr(0),mult_mod(0),shft_src(0),
+            in_dattyp,win_type,vec_sz,src_add,cc_im,src_add_inc,dest_add_inc,cc_re,shft_val);
+
+    dsyntax = ("win.ind %f %f %f, %f, %f, %f, %f, %f, %f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        cc_im, cc_re);
+
+    syntax = ("win.ind %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        cc_im,cc_re);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind
+    );
+    action = { };
+  }
+
+  // Win instruction with MultMode == 1.
+/*
+  win  core in_dattyp win_type     =0            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+  win  core in_dattyp win_type     =0            vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+  win  core in_dattyp win_type shft_val          vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+  win  core in_dattyp win_type shft_val          vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=win_mm1) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(0),shft_wr(0),mult_mod(1),shft_src(0),
+            in_dattyp,win_type,vec_sz,src_add,dest_add,mult_coef_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("win %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_MEM2(mult_coef_add));
+
+    syntax = ("win %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+  }
+
+
+  define (instr=win_mm1_ind) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(1),shft_wr(0),mult_mod(1),shft_src(0),
+            in_dattyp,win_type,vec_sz,src_add,mult_coef_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("win.ind %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_MEM2(mult_coef_add));
+
+    syntax = ("win.ind %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+  }
+
+
+/*
+  win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+  win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=win_mm1_sft_wr) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(0),shft_wr,mult_mod(1),shft_src(1),
+            in_dattyp,win_type,vec_sz,src_add,dest_add,mult_coef_add,src_add_inc,dest_add_inc,shft_ofst);
+
+    dsyntax = ("win %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+        in_dattyp, win_type, shft_ofst, ds_wr(shft_wr), vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_MEM2(mult_coef_add));
+
+    syntax = ("win %f %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_ofst, shft_wr, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+);
+
+    action = { };
+  }
+
+  define (instr=win_mm1_sft_wr_ind) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(1),shft_wr,mult_mod(1),shft_src(1),
+            in_dattyp,win_type,vec_sz,src_add,src_add_inc,dest_add_inc,mult_coef_add,shft_ofst);
+
+    dsyntax = ("win.ind %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+        in_dattyp, win_type, shft_ofst, ds_wr(shft_wr), vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_MEM2(mult_coef_add));
+
+    syntax = ("win.ind %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_ofst, shft_wr, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+  }
+
+
+  // Win instruction with MultMode == 2.
+/*
+  win  core in_dattyp win_type     =0            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+  win  core in_dattyp win_type     =0            vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+  win  core in_dattyp win_type shft_val          vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+  win  core in_dattyp win_type shft_val          vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+*/
+  define (instr=win_mm2) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(0),shft_wr(0),mult_mod(2),shft_src(0),mca_mod, mca_inc,mult_coef_add,
+            in_dattyp,win_type,vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("win %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f, %f, %f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(mult_coef_add),
+        mca_mod, mca_inc);
+
+    syntax = ("win %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add,mca_mod, mca_inc);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+  }
+
+
+  define (instr=win_mm2_ind) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(1),shft_wr(0),mult_mod(2),shft_src(0),mca_mod, mca_inc,mult_coef_add,
+            in_dattyp,win_type,vec_sz,src_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("win.ind %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f, %f, %f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(mult_coef_add),
+        mca_mod, mca_inc);
+
+    syntax = ("win.ind %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_val, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add,mca_mod, mca_inc);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+    action = { };
+  }
+
+
+/*
+  win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+  win  core in_dattyp win_type shft_ofst shft_wr vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+  define (instr=win_mm2_sft_wr) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(0),shft_wr,mult_mod(2),shft_src(1),mult_coef_add,
+            in_dattyp,win_type,vec_sz,src_add,dest_add,mca_mod, mca_inc,src_add_inc,dest_add_inc,shft_ofst);
+
+    dsyntax = ("win %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f, %f, %f",
+        in_dattyp, win_type, shft_ofst, ds_wr(shft_wr), vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(mult_coef_add),
+        mca_mod, mca_inc);
+
+    syntax = ("win %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_ofst, shft_wr, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add,mca_mod, mca_inc);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+  }
+
+  define (instr=win_mm2_sft_wr_ind) {
+    width = 128;
+    fields = (opcode(0x21),ima_fld(1),shft_wr,mult_mod(2),shft_src(1),mult_coef_add,
+            in_dattyp,win_type,vec_sz,src_add,src_add_inc,dest_add_inc,mca_mod, mca_inc,shft_ofst);
+
+    dsyntax = ("win.ind %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f, %f, %f",
+        in_dattyp, win_type, shft_ofst, ds_wr(shft_wr), vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(mult_coef_add),
+        mca_mod, mca_inc);
+
+    syntax = ("win.ind %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, shft_ofst, shft_wr, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        mult_coef_add,mca_mod, mca_inc);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+    action = { };
+  }
+
+
+//RDX4
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             vec_sz src_add, dest_add, src_add_inc, dest_add_inc, cc_im, cc_re
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             vec_sz src_add,           src_add_inc, dest_add_inc, cc_im, cc_re
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          vec_sz src_add, dest_add, src_add_inc, dest_add_inc, cc_im, cc_re
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          vec_sz src_add,           src_add_inc, dest_add_inc, cc_im, cc_re
+*/
+   // rdx4 instruction with MultMode == 0.
+    define (instr=rdx4_mm0) {
+      width = 128;
+      fields = (opcode(0x22),adptv(0),adptv_shft(0),
+            adptv_wr(0),mult_mod(0),shft_src(0),
+            shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+            in_dattyp,win_type,fft_rnd,
+            src_add,dest_add,
+            src_add_inc,dest_add_inc,
+            cc_im,cc_re);
+
+      dsyntax = ("rdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f, %f",
+        in_dattyp, win_type, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        cc_im, cc_re);
+
+      syntax = ("rdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        cc_im,cc_re);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned
+    );
+
+      action = { };
+      }
+
+
+  define (instr=rdx4_mm0_ind) {
+    width = 128;
+    fields = (opcode(0x22),ima_fld(1),mult_mod(0),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+			quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type,vec_sz,src_add,cc_im,src_add_inc,
+			dest_add_inc,cc_re,shft_val);
+
+    dsyntax = ("rdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f, %f",
+        in_dattyp, win_type, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        cc_im, cc_re);
+
+    syntax = ("rdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        cc_im,cc_re);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind
+    );
+
+    action = { };
+  }
+
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0    vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0    vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx4_mm1) {
+    width = 128;
+    fields = (opcode(0x22),adptv(0),adptv_shft(0),
+          adptv_wr(0),mult_mod(1),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("rdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+    }
+
+define (instr=rdx4_mm1_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(1),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+    quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+    dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+
+  action = { };
+}
+
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx4_mm1_adptv) {
+    width = 128;
+    fields = (opcode(0x22),adptv(1),adptv_shft,adptv_ofst,
+          adptv_wr,mult_mod(1),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("rdx4 %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=rdx4_mm1_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(1),shft_src(0),adptv(1),adptv_shft,adptv_wr,adptv_ofst,
+	quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+          ds_src_ind(src_add),
+          src_add_inc, dest_add_inc,
+          DS_MEM2(mult_coef_add));
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+          src_add,
+          src_add_inc, dest_add_inc,
+          mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+
+  action = { };
+}
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx4_mm1_sft_wr) {
+    width = 128;
+    fields = (opcode(0x22),adptv(0),mult_mod(1),
+          shft_src(1),shft_ofst,shft_wr,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd(0),
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("rdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+    }
+
+define (instr=rdx4_mm1_sft_wr_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(1),shft_src(1),adptv(0),shft_ofst,shft_wr,
+	quad_ext,tw_ovs,fft_rnd(0),in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+
+  action = { };
+}
+
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx4 core in_dattyp win_type quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx4_mm1_sft_wr_adptv) {
+    width = 128;
+    fields = (opcode(0x22),adptv(1),mult_mod(1),
+          shft_src(1),shft_ofst,shft_wr,adptv_shft,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd(0),
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("rdx4 %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+    }
+
+define (instr=rdx4_mm1_sft_wr_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(1),shft_src(1),adptv(1),adptv_shft,
+	quad_ext,tw_ovs,fft_rnd(0),in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,shft_ofst,shft_wr);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+
+  action = { };
+}
+
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0    vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0    vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+*/
+  define (instr=rdx4_mm2) {
+    width = 128;
+    fields = (opcode(0x22),adptv(0),adptv_shft(0),
+          adptv_wr(0),mult_mod(2),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add,mult_coef_add,
+          src_add_inc,dest_add_inc,
+          mca_mod, mca_inc);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("rdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod, mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=rdx4_mm2_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(2),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+			quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+			dest_add_inc,mult_coef_add,mca_mod,mca_inc,shft_val);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+  define (instr=rdx4_mm2_adptv) {
+    width = 128;
+    fields = (opcode(0x22),adptv(1),adptv_shft,adptv_ofst,
+          adptv_wr,mult_mod(2),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add, mca_mod,mca_inc);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("rdx4 %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=rdx4_mm2_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(2),shft_src(0),adptv(1),adptv_shft,adptv_wr,adptv_ofst,
+	quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,mca_mod,mca_inc,shft_val);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f, %f, %f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+          ds_src_ind(src_add),
+          src_add_inc, dest_add_inc,
+          DS_RAM2(mult_coef_add),
+          mca_mod, mca_inc);
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+          src_add,
+          src_add_inc, dest_add_inc,
+          mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+  define (instr=rdx4_mm2_sft_wr) {
+    width = 128;
+    fields = (opcode(0x22),adptv(0),mult_mod(2),
+          shft_src(1),shft_ofst,shft_wr,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd(0),
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add, mca_mod,mca_inc);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("rdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=rdx4_mm2_sft_wr_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(2),shft_src(1),adptv(0),shft_ofst,shft_wr,
+	quad_ext,tw_ovs,fft_rnd(0),in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add, mca_mod,mca_inc);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+rdx4 core in_dattyp win_type quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mca_mod, mca_inc
+rdx4 core in_dattyp win_type quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add,           src_add_inc, dest_add_inc, mca_mod, mca_inc
+*/
+  define (instr=rdx4_mm2_sft_wr_adptv) {
+    width = 128;
+    fields = (opcode(0x22),adptv(1),mult_mod(2),
+          shft_src(1),shft_ofst,shft_wr,adptv_shft,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd(0),
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add, mca_mod,mca_inc);
+
+    dsyntax = ("rdx4 %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("rdx4 %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=rdx4_mm2_sft_wr_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x22),ima_fld(1),mult_mod(2),shft_src(1),adptv(1),adptv_shft,
+	quad_ext,tw_ovs,fft_rnd(0),in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add, mca_mod,mca_inc,shft_ofst,shft_wr);
+
+  dsyntax = ("rdx4.ind %f %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+  syntax = ("rdx4.ind %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd    =0                                            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd    =0                                            vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd shft_val                                         vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd shft_val                                         vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx2) {
+    width = 128;
+    fields = (opcode(0x23),adptv(0),adptv_shft(0),
+          adptv_wr(0),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,real_fft,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx2 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add));
+
+    syntax = ("rdx2 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=rdx2_ind) {
+  width = 128;
+  fields = (opcode(0x23),ima_fld(1),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+		quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,real_fft,vec_sz,src_add,src_add_inc,
+		dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("rdx2.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add));
+
+  syntax = ("rdx2.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+  action = { };
+}
+
+
+/*
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx2_adptv) {
+    width = 128;
+    fields = (opcode(0x23),adptv(1),adptv_shft,adptv_ofst,
+          adptv_wr,shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,real_fft,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx2 %f %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+      adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add));
+
+    syntax = ("rdx2 %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+      adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=rdx2_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x23),ima_fld(1),shft_src(0),adptv(1),adptv_shft,adptv_wr,adptv_ofst,
+	quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,real_fft,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("rdx2.ind %f %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+          in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+          adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+          ds_src_ind(src_add),
+          src_add_inc, dest_add_inc,
+          DS_RAM2(mult_coef_add));
+
+  syntax = ("rdx2.ind %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+          in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+          adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+          src_add,
+          src_add_inc, dest_add_inc,
+          mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+
+/*
+rdx2 core in_dattyp real_fft quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx2_sft_wr) {
+    width = 128;
+    fields = (opcode(0x23),adptv(0),
+          shft_src(1),shft_ofst,shft_wr,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,real_fft,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx2 %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add));
+
+    syntax = ("rdx2 %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, shft_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=rdx2_sft_wr_ind) {
+  width = 128;
+  fields = (opcode(0x23),ima_fld(1),shft_src(1),adptv(0),shft_ofst,shft_wr,
+		quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,real_fft,vec_sz,src_add,src_add_inc,
+		dest_add_inc,mult_coef_add);
+
+  dsyntax = ("rdx2.ind %f %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add));
+
+  syntax = ("rdx2.ind %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, shft_wr, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+rdx2 core in_dattyp real_fft quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+rdx2 core in_dattyp real_fft quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=rdx2_sft_wr_adptv) {
+    width = 128;
+    fields = (opcode(0x23),adptv(1),
+          shft_src(1),shft_ofst,shft_wr,adptv_shft,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,real_fft,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("rdx2 %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add));
+
+    syntax = ("rdx2 %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=rdx2_sft_wr_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x23),ima_fld(1),shft_src(1),adptv(1),adptv_shft,
+	quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,real_fft,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,shft_ofst,shft_wr);
+
+  dsyntax = ("rdx2.ind %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_RAM2(mult_coef_add));
+
+  syntax = ("rdx2.ind %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, real_fft, quad_ext, tw_ovs,  fft_rnd_rdx2, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+fir core  in_dattyp win_type init     =0   no_of_taps vec_sz src_add, dest_add, src_add_inc, dest_add_inc, tap_coef_add
+fir core  in_dattyp win_type init     =0   no_of_taps vec_sz src_add,           src_add_inc, dest_add_inc, tap_coef_add
+fir core  in_dattyp win_type init shft_val no_of_taps vec_sz src_add, dest_add, src_add_inc, dest_add_inc, tap_coef_add
+fir core  in_dattyp win_type init shft_val no_of_taps vec_sz src_add,           src_add_inc, dest_add_inc, tap_coef_add
+*/
+
+  define (instr=fir) {
+    width = 128;
+    fields = (opcode(0x29),ima_fld(0),shft_wr(0),shft_src(0),init,no_of_taps,
+            in_dattyp,win_type,vec_sz,src_add,dest_add,tap_coef_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("fir %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, win_type, init, shft_val, no_of_taps, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(tap_coef_add));
+
+    syntax = ("fir %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, init, shft_val, no_of_taps, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        tap_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_tap_coef_tram
+    );
+
+    action = { };
+  }
+
+
+  define (instr=fir_ind) {
+    width = 128;
+    fields = (opcode(0x29),ima_fld(1),shft_wr(0),shft_src(0),init, no_of_taps,
+            in_dattyp,win_type,vec_sz,src_add,tap_coef_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("fir.ind %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, win_type, init, shft_val, no_of_taps, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(tap_coef_add));
+
+    syntax = ("fir.ind %f %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp, win_type, init, shft_val, no_of_taps, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        tap_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_tap_coef_tram
+    );
+
+    action = { };
+  }
+
+/*
+  fir  core in_dattyp win_type init shft_ofst shft_wr no_of_taps vec_sz src_add, dest_add, src_add_inc, dest_add_inc, tap_coef_add
+  fir  core in_dattyp win_type init shft_ofst shft_wr no_of_taps vec_sz src_add,           src_add_inc, dest_add_inc, tap_coef_add
+*/
+  define (instr=fir_sft_wr) {
+    width = 128;
+    fields = (opcode(0x29),ima_fld(0),shft_wr,shft_src(1),init,no_of_taps,
+            in_dattyp,win_type,vec_sz,src_add,dest_add,tap_coef_add,src_add_inc,dest_add_inc,shft_ofst);
+
+    dsyntax = ("fir %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, win_type, init, shft_ofst, ds_wr(shft_wr), no_of_taps, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(tap_coef_add));
+
+    syntax = ("fir %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, win_type, init, shft_ofst, shft_wr, no_of_taps, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc,
+        tap_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_tap_coef_tram
+    );
+
+    action = { };
+  }
+
+  define (instr=fir_sft_wr_ind) {
+    width = 128;
+    fields = (opcode(0x29),ima_fld(1),shft_wr,shft_src(1),init,no_of_taps,
+            in_dattyp,win_type,vec_sz,src_add,src_add_inc,dest_add_inc,tap_coef_add,shft_ofst);
+
+    dsyntax = ("fir.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, win_type, init, shft_ofst, ds_wr(shft_wr), no_of_taps, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(tap_coef_add));
+
+    syntax = ("fir.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp, win_type, init, shft_ofst, shft_wr, no_of_taps, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc,
+        tap_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_tap_coef_tram
+    );
+
+    action = { };
+  }
+
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd     =0   vec_sz src_add, dest_add, src_add_inc, dest_add_inc, cc_im, cc_re
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd     =0   vec_sz src_add,           src_add_inc, dest_add_inc, cc_im, cc_re
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add, dest_add, src_add_inc, dest_add_inc, cc_im, cc_re
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add,           src_add_inc, dest_add_inc, cc_im, cc_re
+*/
+
+  define (instr=irdx4_mm0) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(0),adptv_shft(0),
+          adptv_wr(0),mult_mod(0),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type,fft_rnd,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          cc_im, cc_re);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f, %f",
+      in_dattyp, win_type, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      cc_im, cc_re);
+
+    syntax = ("irdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      cc_im, cc_re);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned
+    );
+
+    action = { };
+    }
+
+
+define (instr=irdx4_mm0_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(0),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+			quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type,vec_sz,src_add,src_add_inc,
+			dest_add_inc,cc_im,cc_re,shft_val);
+
+  /*                    1  2  3  4  5  6   7   8   9  10  11  12 */
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f, %f",
+      /*  1 */ in_dattyp,
+      /*  2 */ win_type,
+      /*  3 */ quad_ext,
+      /*  4 */ tw_ovs,
+      /*  5 */ fft_rnd,
+      /*  6 */ shft_val,
+      /*  7 */ vec_sz,
+      /*  8 */ ds_src_ind(src_add),
+      /*  9 */ src_add_inc,
+      /* 10 */ dest_add_inc,
+      /* 11 */ cc_im,
+      /* 12 */ cc_re
+  );
+
+  /*                    1  2  3  4  5  6   7   8   9  10  11  12 */
+  syntax = ("irdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f, %f",
+      /*  1 */ in_dattyp,
+      /*  2 */ win_type,
+      /*  3 */ quad_ext,
+      /*  4 */ tw_ovs,
+      /*  5 */ fft_rnd,
+      /*  6 */ shft_val,
+      /*  7 */ vec_sz,
+      /*  8 */ src_add,
+      /*  9 */ src_add_inc,
+      /* 10 */ dest_add_inc,
+      /* 11 */ cc_im,
+      /* 12 */ cc_re
+  );
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind
+    );
+
+  action = { };
+}
+
+
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0    vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0    vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=irdx4_mm1) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(0),adptv_shft(0),
+          adptv_wr(0),mult_mod(1),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("irdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=irdx4_mm1_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(1),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+			quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+			dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("irdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+
+  action = { };
+}
+
+
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=irdx4_mm1_adptv) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(1),adptv_shft,adptv_ofst,
+          adptv_wr,mult_mod(1),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("irdx4 %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+    }
+
+
+
+define (instr=irdx4_mm1_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(1),shft_src(0),adptv(1),adptv_shft,adptv_wr,adptv_ofst,
+	quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+          ds_src_ind(src_add),
+          src_add_inc, dest_add_inc,
+          DS_MEM2(mult_coef_add));
+
+  syntax = ("irdx4.ind %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+          src_add,
+          src_add_inc, dest_add_inc,
+          mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+  action = { };
+}
+
+
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=irdx4_mm1_sft_wr) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(0),mult_mod(1),
+          shft_src(1),shft_ofst,shft_wr,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd(0),
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("irdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_wr_tram
+    );
+
+    action = { };
+    }
+
+define (instr=irdx4_mm1_sft_wr_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(1),shft_src(1),adptv(0),shft_ofst,shft_wr,
+	quad_ext,tw_ovs,fft_rnd(0),in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add);
+
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("irdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_wr_tram
+    );
+  action = { };
+}
+
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0                                            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0                                            vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val                                         vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val                                         vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+*/
+  define (instr=irdx4_mm2) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(0),adptv_shft(0),
+          adptv_wr(0),mult_mod(2),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add, mult_coef_add,
+          src_add_inc,dest_add_inc,
+          mca_mod, mca_inc);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("irdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc, mult_coef_add,
+      mca_mod, mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=irdx4_mm2_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(2),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+			quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+			dest_add_inc,mca_mod,mca_inc,shft_val,mult_coef_add);
+
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+  syntax = ("irdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc, mult_coef_add,
+      mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+*/
+  define (instr=irdx4_mm2_adptv) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(1),adptv_shft,adptv_ofst,
+          adptv_wr,mult_mod(2),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd,
+          src_add,dest_add,mult_coef_add,
+          src_add_inc,dest_add_inc,
+          mca_mod,mca_inc);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("irdx4 %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+      adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add,mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=irdx4_mm2_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(2),shft_src(0),adptv(1),adptv_shft,adptv_wr,adptv_ofst,
+	quad_ext,tw_ovs,fft_rnd,in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,mult_coef_add,
+	dest_add_inc,mca_mod,mca_inc,shft_val);
+
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f, %f, %f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+          ds_src_ind(src_add),
+          src_add_inc, dest_add_inc,
+          DS_MEM2(mult_coef_add),
+          mca_mod, mca_inc);
+
+  syntax = ("irdx4.ind %f %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+          in_dattyp, win_type_rdx, quad_ext, tw_ovs, fft_rnd, shft_val,
+          adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+          src_add,
+          src_add_inc, dest_add_inc,
+          mult_coef_add,mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+*/
+  define (instr=irdx4_mm2_sft_wr) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(0),mult_mod(2),
+          shft_src(1),shft_ofst,shft_wr,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd(0),
+          src_add,dest_add,mult_coef_add,
+          src_add_inc,dest_add_inc,
+          mca_mod,mca_inc);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("irdx4 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add,mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=irdx4_mm2_sft_wr_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(2),shft_src(1),adptv(0),shft_ofst,shft_wr,
+	quad_ext,tw_ovs,fft_rnd(0),in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,mca_mod,mca_inc);
+
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+  syntax = ("irdx4.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add,
+      mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+irdx4 core in_dattyp win_type quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+irdx4 core in_dattyp win_type quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add, mca_mod, mca_inc
+*/
+  define (instr=irdx4_mm2_sft_wr_adptv) {
+    width = 128;
+    fields = (opcode(0x2b),adptv(1),mult_mod(2),
+          shft_src(1),shft_ofst,shft_wr,adptv_shft,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,win_type_rdx,fft_rnd(0),
+          src_add,dest_add,mult_coef_add,
+          src_add_inc,dest_add_inc,
+          mca_mod,mca_inc);
+
+    dsyntax = ("irdx4 %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+    syntax = ("irdx4 %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add,mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=irdx4_mm2_sft_wr_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x2b),ima_fld(1),mult_mod(2),shft_src(1),adptv(1),adptv_shft,mult_coef_add,
+	quad_ext,tw_ovs,fft_rnd(0),in_dattyp,win_type_rdx,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mca_mod,mca_inc,shft_ofst,shft_wr);
+
+  dsyntax = ("irdx4.ind %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f, %f, %f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add),
+      mca_mod, mca_inc);
+
+  syntax = ("irdx4.ind %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f,%f",
+      in_dattyp, win_type_rdx, quad_ext, tw_ovs, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add, mca_mod,mca_inc);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd    =0                                            vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd    =0                                            vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd shft_val                                         vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd shft_val                                         vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=irdx2) {
+    width = 128;
+    fields = (opcode(0x2c),adptv(0),adptv_shft(0),
+          adptv_wr(0),shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("irdx2 %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("irdx2 %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=irdx2_ind) {
+  width = 128;
+  fields = (opcode(0x2c),ima_fld(1),shft_src(0),adptv(0),adptv_shft(0),adptv_wr(0),
+      quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,vec_sz,src_add,src_add_inc,
+      dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("irdx2.ind %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("irdx2.ind %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+	action = { };
+}
+
+
+
+/*
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd    =0             adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs fft_rnd shft_val          adptv_shft adptv_ofst adptv_wr vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=irdx2_adptv) {
+    width = 128;
+    fields = (opcode(0x2c),adptv(1),adptv_shft,adptv_ofst,
+          adptv_wr,shft_src(0),
+          shft_val,tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("irdx2 %f %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+      adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("irdx2 %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+      adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+
+define (instr=irdx2_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x2c),ima_fld(1),shft_src(0),adptv(1),adptv_shft,adptv_wr,adptv_ofst,
+      quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,vec_sz,src_add,src_add_inc,
+      dest_add_inc,mult_coef_add,shft_val);
+
+  dsyntax = ("irdx2.ind %f %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+          in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+          adptv_shft, adptv_ofst, ds_wr(adptv_wr), vec_sz,
+          ds_src_ind(src_add),
+          src_add_inc, dest_add_inc,
+          DS_MEM2(mult_coef_add));
+
+  syntax = ("irdx2.ind %f %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+          in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_val,
+          adptv_shft, adptv_ofst, adptv_wr, vec_sz,
+          src_add,
+          src_add_inc, dest_add_inc,
+          mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+
+/*
+irdx2 core in_dattyp quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs    =0   shft_ofst shft_wr                                vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=irdx2_sft_wr) {
+    width = 128;
+    fields = (opcode(0x2c),adptv(0),
+          shft_src(1),shft_ofst,shft_wr,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("irdx2 %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("irdx2 %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, shft_wr, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=irdx2_sft_wr_ind) {
+  width = 128;
+  fields = (opcode(0x2c),ima_fld(1),shft_src(1),adptv(0),shft_ofst,shft_wr,
+	quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add);
+
+  dsyntax = ("irdx2.ind %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("irdx2.ind %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, shft_wr, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+irdx2 core in_dattyp quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add, dest_add, src_add_inc, dest_add_inc, mult_coef_add
+irdx2 core in_dattyp quad_ext tw_ovs shft_ofst shft_wr adptv_shft vec_sz src_add,           src_add_inc, dest_add_inc, mult_coef_add
+*/
+  define (instr=irdx2_sft_wr_adptv) {
+    width = 128;
+    fields = (opcode(0x2c),adptv(1),
+          shft_src(1),shft_ofst,shft_wr,adptv_shft,
+          tw_ovs,quad_ext,ima_fld(0),vec_sz,
+          in_dattyp,fft_rnd_rdx2,
+          src_add,dest_add,
+          src_add_inc,dest_add_inc,
+          mult_coef_add);
+
+    dsyntax = ("irdx2 %f %f %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      DS_RAM1(src_add),
+      DS_RAM(dest_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+    syntax = ("irdx2 %f %f %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add, dest_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_mult_coef_tram
+    );
+
+    action = { };
+    }
+
+define (instr=irdx2_sft_wr_adptv_ind) {
+  width = 128;
+  fields = (opcode(0x2c),ima_fld(1),shft_src(1),adptv(1),adptv_shft,
+	quad_ext,tw_ovs,fft_rnd_rdx2,in_dattyp,vec_sz,src_add,src_add_inc,
+	dest_add_inc,mult_coef_add,shft_ofst,shft_wr);
+
+  dsyntax = ("irdx2.ind %f %f %f %f %f %f %f, %f, %f, %f, %f, %f%f_%f%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, ds_wr(shft_wr), adptv_shft, vec_sz,
+      ds_src_ind(src_add),
+      src_add_inc, dest_add_inc,
+      DS_MEM2(mult_coef_add));
+
+  syntax = ("irdx2.ind %f %f %f %f %f %f %f, %f,%f,%f,%f,%f",
+      in_dattyp, quad_ext, tw_ovs, fft_rnd_rdx2, shft_ofst, shft_wr, adptv_shft, vec_sz,
+      src_add,
+      src_add_inc, dest_add_inc,
+      mult_coef_add);
+
+    asm_rules = (
+        R_fft_vec_sz,
+        R_src_ind,
+        R_mult_coef_tram
+    );
+
+  action = { };
+}
+
+
+/*
+scp core in_dattyp re_im_coeff     =0            no_of_taps vec_sz src_add, dest_add, src_add_inc, dest_add_inc, coef_add
+scp core in_dattyp re_im_coeff     =0            no_of_taps vec_sz src_add,           src_add_inc, dest_add_inc, coef_add
+scp core in_dattyp re_im_coeff shft_val          no_of_taps vec_sz src_add, dest_add, src_add_inc, dest_add_inc, coef_add
+scp core in_dattyp re_im_coeff shft_val          no_of_taps vec_sz src_add,           src_add_inc, dest_add_inc, coef_add
+*/
+
+  define (instr=scp) {
+    width = 128;
+    fields = (opcode(0x2a),ima_fld(0),shft_wr(0),shft_src(0),no_of_taps,scp_coef_add,
+            in_dattyp,re_im_coeff,vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("scp %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, re_im_coeff, shft_val, no_of_taps, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(scp_coef_add));
+
+    syntax = ("scp %f %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, re_im_coeff, shft_val, no_of_taps, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc, scp_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_scp_coef_tram
+    );
+    action = { };
+  }
+
+  define (instr=scp_ind) {
+    width = 128;
+    fields = (opcode(0x2a),ima_fld(1),shft_wr(0),shft_src(0),no_of_taps,scp_coef_add,
+            in_dattyp,re_im_coeff,vec_sz,src_add,src_add_inc,dest_add_inc,shft_val);
+
+    dsyntax = ("scp.ind %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, re_im_coeff, shft_val, no_of_taps, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(scp_coef_add));
+
+    syntax = ("scp.ind %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp, re_im_coeff, shft_val, no_of_taps, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc, scp_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_scp_coef_tram
+    );
+    action = { };
+  }
+
+
+/*
+scp core in_dattyp re_im_coeff shft_ofst shft_wr no_of_taps vec_sz src_add, dest_add, coef_add, src_add_inc, dest_add_inc
+scp core in_dattyp re_im_coeff shft_ofst shft_wr no_of_taps vec_sz src_add,           coef_add, src_add_inc, dest_add_inc
+*/
+  define (instr=scp_sft_wr) {
+    width = 128;
+    fields = (opcode(0x2a),ima_fld(0),shft_wr,shft_src(1),no_of_taps,scp_coef_add,
+            in_dattyp,re_im_coeff,vec_sz,src_add,dest_add,src_add_inc,dest_add_inc,shft_ofst);
+
+    dsyntax = ("scp %f %f %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, re_im_coeff, shft_ofst, ds_wr(shft_wr), no_of_taps, vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(scp_coef_add));
+
+    syntax = ("scp %f %f %f %f %f, %f,%f,%f,%f,%f,%f",
+        in_dattyp, re_im_coeff, shft_ofst, shft_wr, no_of_taps, vec_sz,
+        src_add, dest_add,
+        src_add_inc, dest_add_inc, scp_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_scp_coef_tram
+    );
+    action = { };
+  }
+
+  define (instr=scp_sft_wr_ind) {
+    width = 128;
+    fields = (opcode(0x2a),ima_fld(1),shft_wr,shft_src(1),no_of_taps,scp_coef_add,
+            in_dattyp,re_im_coeff,vec_sz,src_add,src_add_inc,dest_add_inc,shft_ofst);
+
+    dsyntax = ("scp.ind %f %f %f %f %f, %f, %f, %f, %f, %f_%f_%f_%f",
+        in_dattyp, re_im_coeff, shft_ofst, ds_wr(shft_wr), no_of_taps, vec_sz,
+        ds_src_ind(src_add),
+        src_add_inc, dest_add_inc,
+        DS_RAM2(scp_coef_add));
+
+    syntax = ("scp.ind %f %f %f %f %f, %f,%f,%f,%f,%f",
+        in_dattyp, re_im_coeff, shft_ofst, shft_wr, no_of_taps, vec_sz,
+        src_add,
+        src_add_inc, dest_add_inc, scp_coef_add);
+
+    asm_rules = (
+        R_vec_sz_8,
+        R_src_ind,
+        R_scp_coef_tram
+    );
+    action = { };
+  }
+
+} // EOF
