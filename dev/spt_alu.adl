@@ -1,0 +1,466 @@
+/*
+ * Copyright 2020-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt_alu) {
+
+  define (instrfield=shift_fld) {
+    bits = 120;
+    enumerated = ((".noshift",""),".shift");
+    value = "";
+  }
+
+  define (instrfield=modulo_val) {
+    bits = (100,96);
+    enumerated = (
+      ".mod0",  ".mod1",  ".mod2",  ".mod3",  ".mod4",  ".mod5",
+      ".mod6",  ".mod7",  ".mod8",  ".mod9",  ".mod10", ".mod11",
+      ".mod12", ".mod13", ".mod14", ".mod15", ".mod16", ".mod17",
+      ".mod18", ".mod19", ".mod20", ".mod21", ".mod22", ".mod23",
+      (".mod24",""));
+  }
+
+/*
+add shift modulo_val src1_add, src2_add, dest_add
+add shift modulo_val src1_add, imm_dat, dest_add
+*/
+
+  define (instr = add_r) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x3), immed_or_reg_src_fld(1), shift_fld, /* reserved */
+              /* 111: 96 */ /* reserved */ modulo_val,
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add,
+              /*  63: 48 */ src2_add,
+              /*  47:  0 */ imm_dat(0));
+
+    /*              1  2  3   4  5 */
+    syntax = ("add %f %f %f, %f, %f",
+               /* 1 */ shift_fld,
+               /* 2 */ modulo_val,
+               /* 3 */ src_add,
+               /* 4 */ src2_add,
+               /* 5 */ dest_add);
+
+    /*               1  2  3          4       5 */
+    dsyntax = ("add %f %f %f%f_%f%f, %f%f_%f%f, %f%f_%f%f",
+               /* 1 */ shift_fld,
+               /* 2 */ modulo_val,
+               /* 3 */ DS_MEM1(src_add),
+               /* 4 */ DS_MEM2(src2_add),
+               /* 5 */ DS_MEM(dest_add));
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc,
+                 R_src2_valid_reg);
+
+    action = { };
+  };
+
+  // NO prefix version. Bug in ADL does not support no prefix version in the base
+  // definition, even though the base definition includes the no prefix version.
+  define (instr = add_r_np) {
+
+    width = 128;
+    alias = add_r(shift_fld(0), modulo_val(24), src_add(src_add),
+                  src2_add(src2_add), dest_add(dest_add));
+
+    /*              1  2  3 */
+    syntax = ("add %f, %f, %f",
+               /* 1 */ src_add,
+               /* 2 */ src2_add,
+               /* 3 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc,
+                 R_src2_valid_reg);
+  };
+
+  // Version with no modulo field. Bug in ADL does not support this version in the base
+  // definition, even though the base definition includes this version.
+  define (instr = add_r_nm) {
+
+    width = 128;
+    alias = add_r(shift_fld(shift_fld), modulo_val(24), src_add(src_add),
+                  src2_add(src2_add), dest_add(dest_add));
+
+    /*              1  2  3   4*/
+    syntax = ("add %f %f, %f, %f",
+               /* 1 */ shift_fld,
+               /* 2 */ src_add,
+               /* 3 */ src2_add,
+               /* 4 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc,
+                 R_src2_valid_reg);
+  };
+
+  define (instr = add_i) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0x3), immed_or_reg_src_fld(0), shift_fld, /* reserved */
+              /* 111: 96 */ /* reserved */ modulo_val,
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add,
+              /*  63: 48 */ src2_add(0),
+              /*  47:  0 */ imm_dat);
+
+    /*             1  2  3   4    5 */
+    syntax = ("add %f %f %f, #%f, %f",
+              /* 1 */ shift_fld,
+              /* 2 */ modulo_val,
+              /* 3 */ src_add,
+              /* 4 */ imm_dat,
+              /* 5 */ dest_add);
+
+    /*               1  2  3        4   5 */
+    dsyntax = ("add %f %f %f%f_%f%f, #%f, %f%f_%f%f",
+               /* 1 */ shift_fld,
+               /* 2 */ modulo_val,
+               /* 3 */ DS_MEM1(src_add),
+               /* 4 */ imm_dat,
+               /* 5 */ DS_MEM(dest_add));
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc);
+
+    action = { };
+  };
+
+  define (instr = add_i_np) {
+
+    width = 128;
+    alias = add_i(shift_fld(0), modulo_val(24), src_add(src_add),
+                  imm_dat(imm_dat), dest_add(dest_add));
+
+    /*              1  2  3 */
+    syntax = ("add %f, #%f, %f",
+               /* 1 */ src_add,
+               /* 2 */ imm_dat,
+               /* 3 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc);
+  };
+
+  define (instr = add_i_nm) {
+
+    width = 128;
+    alias = add_i(shift_fld(shift_fld), modulo_val(24), src_add(src_add),
+                  imm_dat(imm_dat), dest_add(dest_add));
+
+    /*              1  2  3   4*/
+    syntax = ("add %f %f, #%f, %f",
+               /* 1 */ shift_fld,
+               /* 2 */ src_add,
+               /* 3 */ imm_dat,
+               /* 4 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc);
+  };
+
+/*
+sub shift modulo_val src1_add, src2_add, dest_add
+sub shift modulo_val src1_add, imm_dat, dest_add
+*/
+
+  define (instr = sub_r) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0xB), immed_or_reg_src_fld(1), shift_fld, /* reserved */
+              /* 111: 96 */ /* reserved */ modulo_val,
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add,
+              /*  63: 48 */ src2_add,
+              /*  47:  0 */ imm_dat(0));
+
+    /*              1  2  3  4   5 */
+    syntax = ("sub %f %f %f, %f, %f",
+               /* 1 */ shift_fld,
+               /* 2 */ modulo_val,
+               /* 3 */ src_add,
+               /* 4 */ src2_add,
+               /* 5 */ dest_add);
+
+    /*               1  2  3       4       5 */
+    dsyntax = ("sub %f %f %f%f_%f%f, %f%f_%f%f, %f%f_%f%f",
+               /* 1 */ shift_fld,
+               /* 2 */ modulo_val,
+               /* 3 */ DS_MEM1(src_add),
+               /* 4 */ DS_MEM2(src2_add),
+               /* 5 */ DS_MEM(dest_add));
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc,
+                 R_src2_valid_reg);
+
+    action = { };
+  };
+
+  // NO prefix version. Bug in ADL does not support no prefix version in the base
+  // definition, even though the base definition includes the no prefix version.
+  define (instr = sub_r_np) {
+
+    width = 128;
+    alias = sub_r(shift_fld(0), modulo_val(24), src_add(src_add),
+                  src2_add(src2_add), dest_add(dest_add));
+
+    /*              1  2  3 */
+    syntax = ("sub %f, %f, %f",
+               /* 1 */ src_add,
+               /* 2 */ src2_add,
+               /* 3 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc,
+                 R_src2_valid_reg);
+  };
+
+  // Version with no modulo field. Bug in ADL does not support this version in the base
+  // definition, even though the base definition includes this version.
+  define (instr = sub_r_nm) {
+
+    width = 128;
+    alias = sub_r(shift_fld(shift_fld), modulo_val(24), src_add(src_add),
+                  src2_add(src2_add), dest_add(dest_add));
+
+    /*              1  2  3   4*/
+    syntax = ("sub %f %f, %f, %f",
+               /* 1 */ shift_fld,
+               /* 2 */ src_add,
+               /* 3 */ src2_add,
+               /* 4 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc,
+                 R_src2_valid_reg);
+  };
+
+  define (instr = sub_i) {
+
+    width = 128;
+    fields = (
+              /* 127:112 */ opcode(0xB), immed_or_reg_src_fld(0), shift_fld, /* reserved */
+              /* 111: 96 */ /* reserved */ modulo_val,
+              /*  95: 80 */ src_add,
+              /*  79: 64 */ dest_add,
+              /*  63: 48 */ src2_add(0),
+              /*  47:  0 */ imm_dat);
+
+    /*             1  2  3   4    5 */
+    syntax = ("sub %f %f %f, #%f, %f",
+              /* 1 */ shift_fld,
+              /* 2 */ modulo_val,
+              /* 3 */ src_add,
+              /* 4 */ imm_dat,
+              /* 5 */ dest_add);
+
+    /*               1  2  3   4   5 */
+    dsyntax = ("sub %f %f %f, #%f, %f",
+               /* 1 */ shift_fld,
+               /* 2 */ modulo_val,
+               /* 3 */ src_add,
+               /* 4 */ imm_dat,
+               /* 5 */ dest_add);
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc);
+
+    action = { };
+  };
+
+  define (instr = sub_i_np) {
+
+    width = 128;
+    alias = sub_i(shift_fld(0), modulo_val(24), src_add(src_add),
+                  imm_dat(imm_dat), dest_add(dest_add));
+
+    /*              1  2  3 */
+    syntax = ("sub %f, #%f, %f",
+               /* 1 */ src_add,
+               /* 2 */ imm_dat,
+               /* 3 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc);
+  };
+
+  define (instr = sub_i_nm) {
+
+    width = 128;
+    alias = sub_i(shift_fld(shift_fld), modulo_val(24), src_add(src_add),
+                  imm_dat(imm_dat), dest_add(dest_add));
+
+    /*              1  2  3   4*/
+    syntax = ("sub %f %f, #%f, %f",
+               /* 1 */ shift_fld,
+               /* 2 */ src_add,
+               /* 3 */ imm_dat,
+               /* 4 */ dest_add);
+
+    disassemble = false;
+
+    asm_rules = (R_src_valid_loc,
+                 R_dest_valid_loc);
+  };
+
+
+// cmp  src1_add, src2_add, dest_add
+  define (instr=cmp) {
+    width = 128;
+    fields = (opcode(0xC),immed_or_reg_src_fld(1),imm_dat(0),src_add,src2_add,dest_add);
+
+    dsyntax = ("cmp %f%f_%f%f, %f%f_%f%f, %f%f_%f%f",
+                DS_MEM1(src_add),
+                DS_MEM2(src2_add),
+                DS_MEM(dest_add));
+    syntax = ("cmp %f,%f,%f",src_add,src2_add,dest_add);
+    asm_rules = (R_valid_cmp_operands);
+    action = { };
+  }
+
+// cmp  src1_add, #imm, dest_add
+  define (instr=cmpi) {
+    width = 128;
+    fields = (opcode(0xC),immed_or_reg_src_fld(0),imm_dat,src_add,src2_add(0),dest_add);
+
+	dsyntax = ("cmp %f%f_%f%f, #%f, %f%f_%f%f",
+			DS_MEM1(src_add),
+			imm_dat,
+			DS_MEM(dest_add));
+    syntax = ("cmp %f,#%f,%f",src_add,imm_dat,dest_add);
+    asm_rules = (R_valid_cmp_operands);
+    action = { };
+  }
+
+
+  define (instrfield=sel_re_im) {
+	// SEL
+    bits = 121;
+    enumerated = (".im", ".re");
+  }
+
+  define (instrfield=sel_wr) {
+	// SEL, JUMP
+    bits = (85,80);
+	valid_ranges = (0, 47);
+  }
+
+  define (instrfield=sel_src3_add) {
+    // SEL
+    bits = (47,32);
+  }
+
+  define (instrfield=sel_src1_add) {
+    // SEL
+    bits = (31,16);
+  }
+
+// sel  re_im sel_wr, src1_add, src2_add, src3_add, dest_add
+  define (instr=sel) {
+    width = 128;
+    fields = (opcode(0xE), sel_re_im, sel_wr,
+        dest_add,
+        src2_add,
+        sel_src3_add,
+        sel_src1_add);
+
+	dsyntax = ("sel %f %f %f%f_%f%f, %f%f_%f%f, %f%f_%f%f, %f%f_%f%f", sel_re_im, ds_wr(sel_wr),
+			DS_MEM1(sel_src1_add),
+			DS_MEM2(src2_add),
+			DS_MEM3(sel_src3_add),
+			DS_MEM(dest_add)
+			);
+    syntax = ("sel %f %f %f,%f,%f,%f", sel_re_im, sel_wr, sel_src1_add, src2_add, sel_src3_add, dest_add);
+	asm_rules = (R_valid_sel_operands);
+    action = { };
+  }
+
+  define (assembler) {
+   // Validate CMP operands
+   define (rule=R_valid_cmp_operands) {
+     action = func(InstrInfo ii) {
+       unsigned addr = src_add;
+       unsigned atype = decode_mem(addr);
+       if (atype == MEM_RESERVED
+           || atype == MEM_HW_SPR) {
+         error(0, "illegal operand src1_add: " + get_mem_name(addr) +
+                  ", expected any of: WR_x, SPR_x, EVT_SPR_x, CHRP_SPR_x, OR_x_y_0, TR_x_y_0.");
+       }
+       addr = dest_add;
+       atype = decode_mem(addr);
+       if (atype == MEM_RESERVED
+           || (atype == MEM_HW_SPR && !is_writable_hwspr(addr))
+           || atype == MEM_EVT_SPR) {
+         error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                  ", expected any of: WR_x, SPR_x, HW_SPR_6, HW_SPR_7, CHRP_SPR_x, OR_x_y_0, TR_x_y_0.");
+       }
+       if (ii.instrName() == "cmp") {
+         addr = src2_add;
+         atype = decode_mem(addr);
+	 if (atype == MEM_RESERVED
+	     || atype == MEM_OPRAM
+	     || atype == MEM_TRAM) {
+	  error(0, "illegal operand src2_add: " + get_mem_name(addr) +
+	           ", expected any of: WR_x, SPR_x, EVT_SPR_x, CHRP_SPR_x, HW_SPR_x.");
+         }
+       }
+     };
+   }
+
+   // Validate SEL operands
+   define (rule=R_valid_sel_operands) {
+     action = func(InstrInfo ii) {
+       unsigned addr = dest_add;
+       unsigned atype = decode_mem(addr);
+       if (atype == MEM_RESERVED
+           || (atype == MEM_HW_SPR && !is_writable_hwspr(addr))
+           || atype == MEM_EVT_SPR) {
+         error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                  ", expected any of: WR_x, SPR_x, HW_SPR_6, HW_SPR_7, CHRP_SPR_x, OR_x_y_0, TR_x_y_0.");
+       }
+       addr = sel_src1_add;
+       atype = decode_mem(addr);
+       if (atype == MEM_RESERVED) {
+         error(0, "illegal operand src1_add: " + get_mem_name(addr) +
+                  ", expected a valid register or memory address.");
+       }
+       addr = src2_add;
+       atype = decode_mem(addr);
+       if (atype == MEM_RESERVED) {
+         error(0, "illegal operand src2_add: " + get_mem_name(addr) +
+                  ", expected a valid register or memory address.");
+       }
+       addr = sel_src3_add;
+       atype = decode_mem(addr);
+       if (atype == MEM_RESERVED) {
+         error(0, "illegal operand src3_add: " + get_mem_name(addr) +
+                  ", expected a valid register or memory address.");
+       }
+     };
+   }
+
+  }; // end of assembler block for asm_rules
+
+}
