@@ -1,0 +1,696 @@
+/*
+ * Copyright 2020-2021 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt_copy) {
+
+#define CP_SIMPLE          0
+#define CP_THLD_GE         1
+#define CP_THLD_LT         2
+#define CP_TRANS_8x8       3
+#define CP_PACK_REAL       4
+#define CP_PACK_IMAG       5
+#define CP_UNPACK          6
+#define CP_PARTIAL_REAL    7
+#define CP_PARTIAL_IMAG    8
+#define CP_PARTIAL_R2I     9
+#define CP_PARTIAL_I2R    10
+#define CP_CLEAR          11
+#define CP_SHIFT          12
+#define CP_TRANS_FWD_8X4  13
+#define CP_TRANS_BCK_4X8  14
+#define CP_THLD_GT        17
+#define CP_THLD_STEP_GE   18
+#define CP_THLD_STEP_GT   19
+#define CP_THLD_STEP_LT   20
+#define CP_SCATTER        21
+
+  define (instrfield=cp_type) {
+    // COPY
+    bits = (116,112);
+  }
+
+  define (instrfield=rst_acc) {
+    // COPY
+    bits = 117;
+    enumerated = (".no_rst",".rst_wr");
+  }
+
+  define (instrfield=rst_n_keep) {
+    // COPY
+    bits = 111;
+    enumerated = (".keep_orig",".reset_values");
+    value = ".keep_orig";
+  }
+
+  define (instrfield=blk_src_inc) {
+    // COPY
+    bits = (63,56);
+    allow_conflict = true;
+  }
+
+  define (instrfield=blk_dest_inc) {
+    // COPY
+    bits = (55,48);
+    allow_conflict = true;
+  }
+
+  define (instrfield=sgi_add) {
+    // COPY
+    bits = (63,48);
+  }
+
+  define (instrfield=cp_mask) {
+    // COPY
+    bits = (15,0);
+  }
+
+  define (instrfield=thld_const) {
+    // COPY
+    bits = (31,16);
+    width = 16;
+  }
+
+  define (instrfield=mask_mode) {
+    // COPY
+    bits = 110;
+  }
+
+
+/// <x> = simple, real_pack, imag_pack, shift
+
+// copy.<x>  vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+// copy.<x>.ind  vec_sz, src_add, src_add_inc, dest_add_inc
+// copy.<x>.mask  vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, mask
+// copy.<x>.mask.ind  vec_sz, src_add, src_add_inc, dest_add_inc, mask
+
+#define NAME(x,s) copy_ ## x ## s
+#define COPY(x, opc, rule_src, rule_dest, rule_vec_sz) \
+  define (instr=NAME(x,_)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep(0), ima_fld(0), vec_sz, mask_mode(0), \
+        src_add, dest_add, \
+        src_add_inc, dest_add_inc); \
+    syntax = ("copy." #x "  %f, %f, %f, %f, %f", \
+        vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc); \
+    dsyntax = ("copy." #x " %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f", \
+        vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc); \
+    asm_rules = ( \
+        rule_src, \
+        rule_dest, \
+        rule_vec_sz \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep(0), ima_fld(1), vec_sz, mask_mode(0), \
+        src_add, \
+        src_add_inc, dest_add_inc); \
+    syntax = ("copy." #x ".ind  %f, %f, %f, %f", \
+        vec_sz, \
+        src_add, \
+        src_add_inc, dest_add_inc); \
+    dsyntax = ("copy." #x ".ind  %f, %f, %f, %f", \
+        vec_sz, \
+        ds_src_ind(src_add), \
+        src_add_inc, dest_add_inc); \
+    asm_rules = ( \
+        R_src_ind, \
+        rule_vec_sz \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_mask)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep(0), ima_fld(0), vec_sz, mask_mode(1), \
+        src_add, dest_add, \
+        src_add_inc, dest_add_inc, cp_mask); \
+    syntax = ("copy." #x ".mask  %f, %f, %f, %f, %f, %f", \
+        vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, cp_mask); \
+    dsyntax = ("copy." #x ".mask %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f", \
+        vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc, cp_mask); \
+    asm_rules = ( \
+        rule_src, \
+        rule_dest, \
+        rule_vec_sz \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_mask_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep(0), ima_fld(1), vec_sz, mask_mode(1), \
+        src_add,  \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    syntax = ("copy." #x ".mask.ind  %f, %f, %f, %f, %f", \
+        vec_sz, \
+        src_add, \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    dsyntax = ("copy." #x ".mask.ind %f, %f, %f, %f, %f", \
+        vec_sz, \
+        ds_src_ind(src_add), \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    asm_rules = ( \
+        R_src_ind, \
+        rule_vec_sz \
+    ); \
+    action = { }; \
+  }
+
+  COPY(simple, CP_SIMPLE, R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_8)
+  COPY(real_pack, CP_PACK_REAL, R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_16)
+  COPY(imag_pack, CP_PACK_IMAG, R_src_ram_aligned, R_dest_ram_aligned, R_vec_sz_16)
+  COPY(shift, CP_SHIFT, R_src_ram_aligned, R_dest_ram_unaligned, R_vec_sz_8)
+
+
+/// <x> = unpack, partial_real, partial_imag, partial_r2i, partial_i2r
+
+// copy.<x>  rst_n_keep, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc
+// copy.<x>.ind  rst_n_keep, vec_sz, src_add, src_add_inc, dest_add_inc
+// copy.<x>.mask  rst_n_keep, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, mask
+// copy.<x>.mask.ind  rst_n_keep, vec_sz, src_add, src_add_inc, dest_add_inc, mask
+
+#define COPY_RST_N_KEEP(x,opc) \
+  define (instr=NAME(x,_)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep, ima_fld(0), vec_sz, mask_mode(0), \
+        src_add, dest_add, \
+        src_add_inc, dest_add_inc); \
+    syntax = ("copy." #x "  %f, %f, %f, %f, %f, %f", \
+        rst_n_keep, vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc); \
+    dsyntax = ("copy." #x " %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f", \
+        rst_n_keep, vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc); \
+    asm_rules = ( \
+        R_src_ram_aligned, \
+        R_dest_ram_aligned, \
+        R_vec_sz_8 \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep, ima_fld(1), vec_sz, mask_mode(0), \
+        src_add, \
+        src_add_inc, dest_add_inc); \
+    syntax = ("copy." #x ".ind  %f, %f, %f, %f, %f", \
+        rst_n_keep, \
+        vec_sz, \
+        src_add, \
+        src_add_inc, dest_add_inc); \
+    dsyntax = ("copy." #x ".ind %f, %f, %f, %f, %f", \
+        rst_n_keep, \
+        vec_sz, \
+        ds_src_ind(src_add), \
+        src_add_inc, dest_add_inc); \
+    asm_rules = ( \
+        R_src_ind, \
+        R_vec_sz_8 \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_mask)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep, ima_fld(0), vec_sz, mask_mode(1), \
+        src_add, dest_add, \
+        src_add_inc, dest_add_inc, cp_mask); \
+    syntax = ("copy." #x ".mask  %f, %f, %f, %f, %f, %f, %f", \
+        rst_n_keep, vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, cp_mask); \
+    dsyntax = ("copy." #x ".mask %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f", \
+        rst_n_keep, vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc, cp_mask); \
+    asm_rules = ( \
+        R_src_ram_aligned, \
+        R_dest_ram_aligned, \
+        R_vec_sz_8 \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_mask_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), cp_type(opc), \
+        rst_n_keep, ima_fld(1), vec_sz, mask_mode(1), \
+        src_add,  \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    syntax = ("copy." #x ".mask.ind  %f, %f, %f, %f, %f, %f", \
+        rst_n_keep, \
+        vec_sz, \
+        src_add, \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    dsyntax = ("copy." #x ".mask.ind  %f, %f, %f, %f, %f, %f", \
+        rst_n_keep, \
+        vec_sz, \
+        ds_src_ind(src_add), \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    asm_rules = ( \
+        R_src_ind, \
+        R_vec_sz_8 \
+    ); \
+    action = { }; \
+  }
+
+  COPY_RST_N_KEEP(unpack, CP_UNPACK)
+  COPY_RST_N_KEEP(partial_real, CP_PARTIAL_REAL)
+  COPY_RST_N_KEEP(partial_imag, CP_PARTIAL_IMAG)
+  COPY_RST_N_KEEP(partial_r2i, CP_PARTIAL_R2I)
+  COPY_RST_N_KEEP(partial_i2r, CP_PARTIAL_I2R)
+
+
+/// scatter gather copy
+
+// copy.scat  vec_sz, src_add, dest_add, sgi_add
+  define (instr=copy_scat) {
+
+    width = 128;
+    fields = (opcode(0x25), cp_type(21),
+        rst_n_keep(0), ima_fld(0), vec_sz, mask_mode(0),
+        src_add, dest_add,
+        sgi_add);
+
+    dsyntax = ("copy.scat  %f, %f_%f_%f_%f, %f_%f_%f_%f, %f_%f_%f_%f",
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        DS_RAM2(sgi_add));
+
+    syntax = ("copy.scat %f, %f, %f, %f", vec_sz, src_add, dest_add, sgi_add);
+
+    asm_rules = (
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_vec_sz_8,
+        R_sgi_tram_aligned
+    );
+
+    action = { };
+  }
+
+// copy.scat.ind  vec_sz, src_add, sgi_add
+  define (instr=copy_scat_ind) {
+
+    width = 128;
+    fields = (opcode(0x25), cp_type(21),
+        rst_n_keep(0), ima_fld(1), vec_sz, mask_mode(0),
+        src_add,
+        sgi_add);
+
+    dsyntax = ("copy.scat.ind %f, %f, %f_%f_%f_%f",
+        vec_sz,
+        ds_src_ind(src_add),
+        DS_RAM2(sgi_add));
+
+    syntax = ("copy.scat.ind %f, %f, %f",
+        vec_sz,
+        src_add,
+        sgi_add);
+
+    asm_rules = (
+        R_src_ind,
+        R_vec_sz_8,
+        R_sgi_tram_aligned
+    );
+
+    action = { };
+  }
+
+// copy.scat.mask  vec_sz, src_add, dest_add, sgi_add, mask
+  define (instr=copy_scat_mask) {
+
+    width = 128;
+    fields = (opcode(0x25), cp_type(21),
+        rst_n_keep(0), ima_fld(0), vec_sz, mask_mode(1),
+        src_add, dest_add,
+        sgi_add, cp_mask);
+
+    dsyntax = ("copy.scat.mask %f, %f_%f_%f_%f, %f_%f_%f_%f, %f_%f_%f_%f, %f",
+        vec_sz,
+        DS_RAM1(src_add),
+        DS_RAM(dest_add),
+        DS_RAM2(sgi_add),
+        cp_mask);
+
+    syntax = ("copy.scat.mask  %f, %f, %f, %f, %f",
+        vec_sz,
+        src_add,
+        dest_add,
+        sgi_add,
+        cp_mask);
+
+    asm_rules = (
+        R_src_oram_aligned,
+        R_dest_oram_aligned,
+        R_vec_sz_8,
+        R_sgi_tram_aligned
+    );
+
+    action = { };
+  }
+
+// copy.scat.mask.ind  vec_sz, src_add, sgi_add, mask
+  define (instr=copy_scat_mask_ind) {
+
+    width = 128;
+    fields = (opcode(0x25), cp_type(21),
+        rst_n_keep(0), ima_fld(1), vec_sz, mask_mode(1),
+        src_add,
+        sgi_add,
+        cp_mask);
+
+    dsyntax = ("copy.scat.mask.ind %f, %f, %f_%f_%f_%f, %f",
+        vec_sz,
+        ds_src_ind(src_add),
+        DS_RAM2(sgi_add),
+        cp_mask);
+
+    syntax = ("copy.scat.mask.ind %f, %f, %f, %f",
+        vec_sz,
+        src_add,
+        sgi_add,
+        cp_mask);
+
+    asm_rules = (
+        R_src_ind,
+        R_vec_sz_8,
+        R_sgi_tram_aligned
+    );
+
+    action = { };
+  }
+
+
+/// threshold copy <x> = thld_ge, thld_gt, thld_lt
+
+// copy.<x>  in_dattyp preproc rst_acc, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, thld_add
+// copy.<x>.ind  in_dattyp preproc rst_acc, vec_sz, src_add, src_add_inc, dest_add_inc, thld_add
+// copy.<x>.step  in_dattyp preproc rst_acc, vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, thld_add, thld_const
+// copy.<x>.step.ind  in_dattyp preproc rst_acc, vec_sz, src_add, src_add_inc, dest_add_inc, thld_add, thld_const
+
+#define COPYTH(x,opc) \
+  define (instr=NAME(x,_)) { \
+    width = 128; \
+    fields = (opcode(0x25), in_dattyp2, cp_type(opc), rst_n_keep(0), ima_fld(0), vec_sz, \
+        pre_proc, rst_acc, mask_mode(0), \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, thld_add); \
+    syntax = ("copy." #x " %f %f %f, %f, %f, %f, %f, %f, %f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, \
+        thld_add); \
+    dsyntax = ("copy." #x " %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc, \
+        DS_MEM2(thld_add)); \
+    asm_rules = ( \
+        R_src_ram_aligned, \
+        R_dest_ram_aligned, \
+        R_thld_wr_ram, R_vec_sz_8 \
+    ); \
+    action = {}; \
+  } \
+\
+  define (instr=NAME(x,_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), in_dattyp2, cp_type(opc), rst_n_keep(0), ima_fld(1), vec_sz, \
+        pre_proc, rst_acc, mask_mode(0), \
+        src_add, \
+        dest_add(0), \
+        src_add_inc, dest_add_inc, thld_add); \
+    syntax = ("copy." #x ".ind %f %f %f, %f, %f, %f, %f, %f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        src_add, \
+        src_add_inc, dest_add_inc, \
+        thld_add); \
+    dsyntax = ("copy." #x ".ind %f %f %f, %f, %f, %f, %f, %f%f_%f%f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        ds_src_ind(src_add), \
+        src_add_inc, dest_add_inc, \
+        DS_MEM2(thld_add)); \
+    asm_rules = ( \
+        R_src_ind, \
+        R_thld_wr_ram, \
+        R_vec_sz_8 \
+    ); \
+    action = {}; \
+  }
+
+#define COPYTHSTEP(x,opc) \
+  define (instr=NAME(x,_step)) { \
+    width = 128; \
+    fields = (opcode(0x25), in_dattyp2, cp_type(opc), rst_n_keep(0), ima_fld(0), vec_sz, \
+        pre_proc, rst_acc, mask_mode(0), \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, thld_const, thld_add); \
+    syntax = ("copy." #x ".step %f %f %f, %f, %f, %f, %f, %f, %f, %f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, \
+        thld_add, \
+        thld_const); \
+    dsyntax = ("copy." #x ".step %f %f %f, %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f%f_%f%f, %f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc, \
+        DS_MEM2(thld_add), \
+        thld_const); \
+    asm_rules = ( \
+        R_src_ram_aligned, \
+        R_dest_ram_aligned, \
+        R_thld_wr_ram, \
+        R_vec_sz_8 \
+    ); \
+    action = {}; \
+  } \
+\
+  define (instr=NAME(x,_step_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), in_dattyp2, cp_type(opc), ima_fld(1), vec_sz, \
+        pre_proc, rst_acc, mask_mode(0), \
+        src_add, \
+        dest_add(0), \
+        src_add_inc, dest_add_inc, thld_const, thld_add); \
+    syntax = ("copy." #x ".step.ind %f %f %f, %f, %f, %f, %f, %f, %f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        src_add, \
+        src_add_inc, dest_add_inc, \
+        thld_add, \
+        thld_const); \
+    dsyntax = ("copy." #x ".step.ind %f %f %f, %f, %f, %f, %f, %f%f_%f%f, %f", \
+        in_dattyp2, pre_proc, rst_acc, \
+        vec_sz, \
+        ds_src_ind(src_add), \
+        src_add_inc, dest_add_inc, \
+        DS_MEM2(thld_add), \
+        thld_const); \
+    asm_rules = ( \
+        R_src_ind, \
+        R_thld_wr_ram, \
+        R_vec_sz_8 \
+    ); \
+    action = {}; \
+  }
+
+  COPYTH(thld_ge, CP_THLD_GE)
+  COPYTH(thld_lt, CP_THLD_LT)
+  COPYTH(thld_gt, CP_THLD_GT)
+  COPYTHSTEP(thld_ge, CP_THLD_STEP_GE)
+  COPYTHSTEP(thld_lt, CP_THLD_STEP_LT)
+  COPYTHSTEP(thld_gt, CP_THLD_STEP_GT)
+
+
+/// transpose copy <x> = trans, trans_bck_4x8, trans_fwd_8x4
+
+// copy.<x>  vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc
+// copy.<x>.ind  vec_sz, src_add, src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc
+// copy.<x>.mask  vec_sz, src_add, dest_add, src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc, mask
+// copy.<x>.mask.ind  vec_sz, src_add, src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc, mask
+
+#define COPYTRANS(x,opc) \
+  define (instr=NAME(x,_)) { \
+    width = 128; \
+    fields = (opcode(0x25), pre_proc(0), rst_acc(0), cp_type(opc), \
+        rst_n_keep(0), ima_fld(0), vec_sz, mask_mode(0), \
+        src_add, \
+        dest_add, \
+        blk_src_inc, blk_dest_inc, \
+        src_add_inc, dest_add_inc, \
+        cp_mask(0)); \
+    syntax = ("copy." #x " %f, %f, %f, %f, %f, %f, %f", \
+        vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc \
+        ); \
+    dsyntax = ("copy." #x " %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f, %f", \
+        vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc \
+        ); \
+    asm_rules = (\
+        R_src_ram_aligned, \
+        R_dest_ram_aligned, \
+        R_vec_sz_64 \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), pre_proc(0), rst_acc(0), cp_type(opc), \
+        rst_n_keep(0), ima_fld(1), vec_sz, mask_mode(0), \
+        src_add, \
+        dest_add(0), \
+        blk_src_inc, blk_dest_inc, \
+        src_add_inc, dest_add_inc, \
+        cp_mask(0)); \
+    syntax = ("copy." #x ".ind %f, %f, %f, %f, %f, %f", \
+        vec_sz, src_add, src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc \
+        ); \
+    dsyntax = ("copy." #x ".ind %f, %f, %f, %f, %f, %f", \
+        vec_sz, ds_src_ind(src_add), src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc \
+        ); \
+    asm_rules = ( \
+        R_src_ind, \
+        R_vec_sz_64 \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_mask)) { \
+    width = 128; \
+    fields = (opcode(0x25), pre_proc(0), rst_acc(0), cp_type(opc), \
+        rst_n_keep(0), ima_fld(0), vec_sz, mask_mode(1), \
+        src_add, \
+        dest_add, \
+        blk_src_inc, blk_dest_inc, \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    syntax = ("copy." #x ".mask %f, %f, %f, %f, %f, %f, %f, %f", \
+        vec_sz, \
+        src_add, \
+        dest_add, \
+        src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc, cp_mask \
+        ); \
+    dsyntax = ("copy." #x ".mask %f, %f_%f_%f_%f, %f_%f_%f_%f, %f, %f, %f, %f, %f", \
+        vec_sz, \
+        DS_RAM1(src_add), \
+        DS_RAM(dest_add), \
+        src_add_inc, dest_add_inc, blk_src_inc, blk_dest_inc, cp_mask \
+        ); \
+    asm_rules = ( \
+        R_src_ram_aligned, \
+        R_dest_ram_aligned, \
+        R_vec_sz_64 \
+    ); \
+    action = { }; \
+  } \
+\
+  define (instr=NAME(x,_mask_ind)) { \
+    width = 128; \
+    fields = (opcode(0x25), pre_proc(0), rst_acc(0), cp_type(opc), \
+        rst_n_keep(0), ima_fld(1), vec_sz, mask_mode(1), \
+        src_add, \
+        blk_src_inc, blk_dest_inc, \
+        src_add_inc, dest_add_inc, \
+        cp_mask); \
+    syntax = ("copy." #x ".mask.ind %f, %f, %f, %f, %f, %f, %f", \
+        vec_sz, src_add, src_add_inc, \
+        dest_add_inc, blk_src_inc, blk_dest_inc, cp_mask \
+        ); \
+    dsyntax = ("copy." #x ".mask.ind %f, %f, %f, %f, %f, %f, %f", \
+        vec_sz, ds_src_ind(src_add), src_add_inc, \
+        dest_add_inc, blk_src_inc, blk_dest_inc, cp_mask \
+        ); \
+    asm_rules = ( \
+        R_src_ind, \
+        R_vec_sz_64 \
+    ); \
+    action = { }; \
+  }
+
+  COPYTRANS(trans, CP_TRANS_8x8)
+  COPYTRANS(trans_bck_4x8, CP_TRANS_BCK_4X8)
+  COPYTRANS(trans_fwd_8x4, CP_TRANS_FWD_8X4)
+
+
+/// clear copy
+
+// copy.clear  vec_sz, dest_add, dest_add_inc, mask
+  define (instr=copy_clear) {
+
+    width = 128;
+    fields = (opcode(0x25), vec_sz,
+        src_add(0x8000), dest_add, cp_type(11),
+        mask_mode(0), dest_add_inc,
+        cp_mask
+    );
+
+    dsyntax = ("copy.clear %f, %f_%f_%f_%f, %f, %f", vec_sz, DS_RAM(dest_add), dest_add_inc, cp_mask);
+    syntax = ("copy.clear %f, %f, %f, %f", vec_sz, dest_add, dest_add_inc, cp_mask);
+
+    asm_rules = (
+        R_dest_ram_aligned,
+        R_vec_sz_8
+    );
+
+    action = {};
+  }
+
+} // EOF

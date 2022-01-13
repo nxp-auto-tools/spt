@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>libobjdump</ProjectName>
+    <ProjectGuid>{DD7B9960-C298-4F65-B0DB-8C904809BDBA}</ProjectGuid>
+    <RootNamespace>libbinutils</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\binutils-adl\binutils;$(SolutionDir)\external\binutils-adl\win-build\binutils;$(SolutionDir)\external\binutils-adl\bfd;$(SolutionDir)\external\binutils-adl\win-build\bfd;$(SolutionDir)\external\binutils-adl\include;$(SolutionDir)\external\binutils-adl\win-headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>bin_dummy_emulation=bin_vanilla_emulation;HAVE_CONFIG_H;OBJDUMP_PRIVATE_VECTORS=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="external\binutils-adl\binutils\binemul.c" />
+    <ClCompile Include="external\binutils-adl\binutils\bucomm.c" />
+    <ClCompile Include="external\binutils-adl\binutils\debug.c" />
+    <ClCompile Include="external\binutils-adl\binutils\dwarf.c" />
+    <ClCompile Include="external\binutils-adl\binutils\elfcomm.c" />
+    <ClCompile Include="external\binutils-adl\binutils\filemode.c" />
+    <ClCompile Include="external\binutils-adl\binutils\ieee.c" />
+    <ClCompile Include="external\binutils-adl\binutils\objdump.c" />
+    <ClCompile Include="external\binutils-adl\binutils\prdbg.c" />
+    <ClCompile Include="external\binutils-adl\binutils\rdcoff.c" />
+    <ClCompile Include="external\binutils-adl\binutils\rddbg.c" />
+    <ClCompile Include="external\binutils-adl\binutils\rename.c" />
+    <ClCompile Include="external\binutils-adl\binutils\stabs.c" />
+    <ClCompile Include="external\binutils-adl\binutils\version.c" />
+    <ClCompile Include="external\binutils-adl\binutils\wrstabs.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="external\binutils-adl\win-build\binutils\config.h" />
+    <ClInclude Include="external\binutils-adl\binutils\sysdep.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
