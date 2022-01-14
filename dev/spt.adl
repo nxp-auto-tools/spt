@@ -1,0 +1,45 @@
+#include "spt_addr.adl"
+#include "spt_alu.adl"
+#include "spt_cmds.adl"
+#include "spt_fft.adl"
+#include "spt_hist.adl"
+#include "spt_sort.adl"
+#include "spt_vmt.adl"
+#include "spt_copy.adl"
+
+define (core=spt3_5) {
+
+  archs = (spt_addressing, spt_alu, spt_cmds, spt_fft, spt_hist, spt_sort, spt_vmt, spt_copy);
+  instr_endianness = little;
+  data_endianness = little;
+  bit_endianness = little;
+
+  define (assembler) {
+    comments=(";");
+    line_comments=(";","#");
+    symbol_chars = ("#");
+    arg_separators=(",");
+  }
+
+  //
+  // Relocations.
+  //
+
+  // 32-bit address relocation in data for ARM
+  define (reloc=R_ARM_ABS32) {
+    value = 2;
+    bfd_code = 2;
+    offset = 0;
+    pcrel = false;
+    field_width = 32;
+  }
+
+  // 64-bit address relocation in data for AARCH64
+  define (reloc=R_AARCH64_ABS64) {
+    value = 257;
+    bfd_code = 1;
+    offset = 0;
+    pcrel = false;
+    field_width = 64;
+  }
+}
