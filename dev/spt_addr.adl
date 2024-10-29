@@ -1,0 +1,1217 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: GPL-3.0+
+ */
+
+define (arch=spt_addressing) {
+
+  define (instrfield=immed_or_reg_src_fld) {
+    bits = 121;
+    enumerated = (".immed",("",".reg"));
+  }
+
+  define (reg=PC) {
+    attrs = (nia,cia);
+  }
+
+  define (instrfield=opcode) {
+    bits = (127,122);
+  }
+
+  define (instrfield=opcb) {
+    bits = (126);
+    enumerated = ("", ".b");
+    value = "";
+    allow_conflict = true;
+  }
+
+  define (instrfield=opc) {
+    bits = ((127,127),(125,122));
+    allow_conflict = true;
+  }
+
+  define (instrfield=ima_fld) {
+    bits = 109;
+    enumerated = (".imm", ".ind");
+    value = ".imm";
+  }
+
+  define (instrfield=src_add) {
+    bits = (95, 80);
+  }
+
+  define (instrfield=dest_add) {
+    bits = (79, 64);
+  }
+
+  define (instrfield=src2_add) {
+    bits = (63, 48);
+  }
+
+  define (instrfield=imm_dat) {
+    bits = (47,0);
+    type = immed;
+    is_signed = true;
+    unsigned_upper_bound = true;
+  }
+
+
+#define MEM_WR        0
+#define MEM_TRAM      1
+#define MEM_OPRAM     2
+#define MEM_SPR       3
+#define MEM_HW_SPR    4
+#define MEM_EVT_SPR   5
+#define MEM_CHRP_SPR  6
+#define MEM_RESERVED  7
+
+#define SLICE_MASK    0xf
+
+
+  unsigned decode_mem(unsigned addr) {
+    if (addr & 0xc000) {
+      return (addr & 0x8000) ? MEM_OPRAM : MEM_TRAM;
+    }
+    else if (addr < 0x1034) {
+      if (addr < 0x40) {
+        return MEM_WR;
+      }
+      else if ((0x1000 <= addr) && (addr <= 0x100e)) {
+        return MEM_SPR;
+      }
+      else if (((0x1010 <= addr) && (addr <= 0x1015)) || (addr >= 0x1030)) {
+        return MEM_HW_SPR;
+      }
+      else if ((0x1016 <= addr) && (addr <= 0x101f)) {
+        return MEM_EVT_SPR;
+      }
+      else if ((0x1020 <= addr) && (addr <= 0x1027)) {
+        return MEM_CHRP_SPR;
+      }
+      return MEM_RESERVED;
+    }
+    return MEM_RESERVED;
+  }
+
+#define DS_BANK_NONE 8
+#define DS_COLUMN_NONE 512
+#define DS_SLICE_NONE 16
+
+  unsigned decode_bank(unsigned addr) {
+    if (addr & 0xc000) {
+      return (addr & 0x8000) ? ((addr >> 13) & 0x3) /* OR */ : ((addr >> 12) & 0x3) /* TR */;
+    }
+    return DS_BANK_NONE; /* WR or SPR, bank is empty */
+  }
+
+  unsigned decode_column(unsigned addr) {
+    if (addr & 0xc000) { /* OR or TR */
+      return (addr & 0x8000) ? ((addr >> 4) & 0x1ff) /* OR */ : ((addr >> 4) & 0xff) /* TR */;
+    }
+    return DS_COLUMN_NONE; /* WR or SPR */
+  }
+
+// Used to print either memory or registers in tandem
+  unsigned decode_column_or_index(unsigned addr) {
+    if (addr & 0xc000) { /* OR or TR */
+      return (addr & 0x8000) ? ((addr >> 4) & 0x1ff) /* OR */ : ((addr >> 4) & 0xff) /* TR */;
+    }
+    if (addr < 0x40) { /* WR */
+      return addr;
+    }
+    unsigned slice = addr & 0x3f;
+    if (slice <= 0xe) { /* SPR */
+      return slice;
+    }
+    if (slice <= 0x15) { /* HW_SPR_0-5 */
+      return slice - 0x10;
+    }
+    if (slice <= 0x1f) { /* EVT_SPR */
+      return slice - 0x16;
+    }
+    if (slice <= 0x27) { /* CHRP_SPR */
+      return slice - 0x20;
+    }
+    return slice - 0x30 + 6; /* HW_SPR_6-9 */
+  }
+
+  unsigned decode_slice(unsigned addr) {
+    if (addr & 0xc000) { /* OR or TR */
+      return (addr & 0xf);
+    }
+    /* WR or SPR */
+    return (addr & 0x3f);
+  }
+
+  unsigned decode_ram_slice(unsigned addr) {
+    if (addr & 0xc000) { /* OR or TR */
+      return (addr & 0xf);
+    }
+    return DS_SLICE_NONE;
+  }
+
+  std::string get_mem_name(unsigned x) {
+    unsigned m = decode_mem(x);
+    ostringstream s;
+    switch(m) {
+      case MEM_WR: s << "WR_" << decode_slice(x); break;
+      case MEM_TRAM: s << "TR_" << decode_bank(x) << "_" << decode_column(x) << "_" << decode_slice(x); break;
+      case MEM_OPRAM: s << "OR_" << decode_bank(x) << "_" << decode_column(x) << "_" << decode_slice(x); break;
+      case MEM_SPR: s << "SPR_" << decode_slice(x); break;
+      case MEM_HW_SPR:
+        if (0x1030 <= x && x <= 0x1033) {
+          s << "HW_SPR_" << (decode_slice(x) - 0x30 + 6);
+        }
+        else {
+          s << "HW_SPR_" << (decode_slice(x) - 0x10);
+        }
+        break;
+      case MEM_EVT_SPR: s << "EVT_SPR_" << (decode_slice(x) - 0x16); break;
+      case MEM_CHRP_SPR: s << "CHRP_SPR_" << (decode_slice(x) - 0x20); break;
+      default: s << "0x" << hex << x << " (reserved)";
+    }
+    return s.str();
+  }
+
+  unsigned get_mode ( unsigned x ) {
+    return x >> 14 ;
+  }
+
+
+  define (instrfield=ds_wr) {
+    pseudo = true;
+    width = 6;
+    enumerated = (
+#include "ds_wr.h"
+    );
+  }
+
+  define (instrfield=ds_wr1) {
+    pseudo = true;
+    width = 6;
+    enumerated = (
+#include "ds_wr.h"
+    );
+  }
+
+  define (instrfield=ds_wr2) {
+    pseudo = true;
+    width = 6;
+    enumerated = (
+#include "ds_wr.h"
+    );
+  }
+
+  define (instrfield=ds_src_ind) {
+    pseudo = true;
+    width = 16;
+    enumerated = (
+#include "ds_wr.h"
+    );
+  }
+
+
+// ds_mem*
+  define (instrfield=ds_mem) {
+    pseudo = true;
+    width = 3;
+    enumerated = ("WR", "TR", "OR", "SPR", "HW_SPR", "EVT_SPR", "CHRP_SPR", "");
+  }
+
+  define (instrfield=ds_mem1) {
+    pseudo = true;
+    width = 3;
+    enumerated = ("WR", "TR", "OR", "SPR", "HW_SPR", "EVT_SPR", "CHRP_SPR", "");
+  }
+
+  define (instrfield=ds_mem2) {
+    pseudo = true;
+    width = 3;
+    enumerated = ("WR", "TR", "OR", "SPR", "HW_SPR", "EVT_SPR", "CHRP_SPR", "");
+  }
+
+  define (instrfield=ds_mem3) {
+    pseudo = true;
+    width = 3;
+    enumerated = ("WR", "TR", "OR", "SPR", "HW_SPR", "EVT_SPR", "CHRP_SPR", "");
+  }
+
+
+// ds_bank*
+  define (instrfield=ds_bank) {
+    pseudo = true;
+    display = dec;
+    width = 2;
+  }
+
+  define (instrfield=ds_bank1) {
+    pseudo = true;
+    display = dec;
+    width = 2;
+  }
+
+  define (instrfield=ds_bank2) {
+    pseudo = true;
+    display = dec;
+    width = 2;
+  }
+
+// ds_column*
+  define (instrfield=ds_column) {
+    pseudo = true;
+    width = 9;
+    display = dec;
+  }
+
+  define (instrfield=ds_column1) {
+    pseudo = true;
+    width = 9;
+    display = dec;
+  }
+
+  define (instrfield=ds_column2) {
+    pseudo = true;
+    width = 9;
+    display = dec;
+  }
+
+
+// ds_ram_slice
+  define (instrfield=ds_ram_slice) {
+    pseudo = true;
+    width = 4;
+    display = dec;
+  }
+
+  define (instrfield=ds_ram_slice1) {
+    pseudo = true;
+    width = 4;
+    display = dec;
+  }
+
+  define (instrfield=ds_ram_slice2) {
+    pseudo = true;
+    width = 4;
+    display = dec;
+  }
+
+
+// Disassemble RAM addresses as <mem>_<bank>_<column>_<slice> symbols
+#define DS_RAM(m)  ds_mem(decode_mem(m)),ds_bank(decode_bank(m)),ds_column(decode_column(m)),ds_ram_slice(decode_ram_slice(m))
+#define DS_RAM1(m) ds_mem1(decode_mem(m)),ds_bank1(decode_bank(m)),ds_column1(decode_column(m)),ds_ram_slice1(decode_ram_slice(m))
+#define DS_RAM2(m) ds_mem2(decode_mem(m)),ds_bank2(decode_bank(m)),ds_column2(decode_column(m)),ds_ram_slice2(decode_ram_slice(m))
+
+
+// ds_str_bank*
+  define (instrfield=ds_str_bank) {
+    pseudo = true;
+    width = 2;
+    enumerated = ("_0", "_1", "_2", "_3", "");
+  }
+
+  define (instrfield=ds_str_bank1) {
+    pseudo = true;
+    width = 2;
+    enumerated = ("_0", "_1", "_2", "_3", "");
+  }
+
+  define (instrfield=ds_str_bank2) {
+    pseudo = true;
+    width = 2;
+    enumerated = ("_0", "_1", "_2", "_3", "");
+  }
+
+  define (instrfield=ds_str_bank3) {
+    pseudo = true;
+    width = 2;
+    enumerated = ("_0", "_1", "_2", "_3", "");
+  }
+
+
+// ds_str_column*
+  define (instrfield=ds_str_column2) {
+    pseudo = true;
+    width = 10;
+    enumerated = (
+#include "ds_column.h"
+    , ""
+    );
+  }
+
+
+// ds_index_column*
+  define (instrfield=ds_index_column) {
+    pseudo = true;
+    width = 9;
+    display = dec;
+  }
+
+  define (instrfield=ds_index_column1) {
+    pseudo = true;
+    width = 9;
+    display = dec;
+  }
+
+  define (instrfield=ds_index_column2) {
+    pseudo = true;
+    width = 9;
+    display = dec;
+  }
+
+  define (instrfield=ds_index_column3) {
+    pseudo = true;
+    width = 9;
+    display = dec;
+  }
+
+
+// ds_str_slice*
+  define (instrfield=ds_str_slice) {
+    pseudo = true;
+    width = 4;
+    enumerated = ("_0", "_1", "_2", "_3", "_4", "_5", "_6", "_7", "_8", "_9", "_10", "_11", "_12", "_13", "_14", "_15", "");
+  }
+
+  define (instrfield=ds_str_slice1) {
+    pseudo = true;
+    width = 4;
+    enumerated = ("_0", "_1", "_2", "_3", "_4", "_5", "_6", "_7", "_8", "_9", "_10", "_11", "_12", "_13", "_14", "_15", "");
+  }
+
+  define (instrfield=ds_str_slice2) {
+    pseudo = true;
+    width = 4;
+    enumerated = ("_0", "_1", "_2", "_3", "_4", "_5", "_6", "_7", "_8", "_9", "_10", "_11", "_12", "_13", "_14", "_15", "");
+  }
+
+  define (instrfield=ds_str_slice3) {
+    pseudo = true;
+    width = 4;
+    enumerated = ("_0", "_1", "_2", "_3", "_4", "_5", "_6", "_7", "_8", "_9", "_10", "_11", "_12", "_13", "_14", "_15", "");
+  }
+
+// Disassemble memory addresses as <mem>_<bank>_<column>_<slice> or <reg>_<index> by using <mem><_bank/"">_<column/index><_slice/"">
+#define DS_MEM(m) ds_mem(decode_mem(m)),ds_str_bank(decode_bank(m)),ds_index_column(decode_column_or_index(m)),ds_str_slice(decode_ram_slice(m))
+#define DS_MEM1(m) ds_mem1(decode_mem(m)),ds_str_bank1(decode_bank(m)),ds_index_column1(decode_column_or_index(m)),ds_str_slice1(decode_ram_slice(m))
+#define DS_MEM2(m) ds_mem2(decode_mem(m)),ds_str_bank2(decode_bank(m)),ds_index_column2(decode_column_or_index(m)),ds_str_slice2(decode_ram_slice(m))
+#define DS_MEM3(m) ds_mem3(decode_mem(m)),ds_str_bank3(decode_bank(m)),ds_index_column3(decode_column_or_index(m)),ds_str_slice3(decode_ram_slice(m))
+
+// Disassemble memory addresses as empty or <mem>_<bank>_<column>_<slice> by using <mem/""><_bank/""><_column/""><_slice/"">
+#define DS0_MEM2(m) ds_mem2(decode_mem(m)),ds_str_bank2(decode_bank(m)),ds_str_column2(decode_column(m)),ds_str_slice2(decode_ram_slice(m))
+
+
+// Rules to be used by instruction definitions to check operand restrictions
+  define (assembler) {
+
+    // VEC_SZ multiple of 8
+    define (rule=R_vec_sz_8) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        if (vsize && (vsize % 8 != 0))
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 8.");
+        };
+    }
+
+    // VEC_SZ multiple of 16
+    define (rule=R_vec_sz_16) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        if (vsize && (vsize % 16 != 0))
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 16.");
+        };
+    }
+
+    // VEC_SZ multiple of 64
+    define (rule=R_vec_sz_64) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        if (vsize && (vsize % 64 != 0))
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 64.");
+        };
+    }
+
+    // VEC_SZ multiple of 256 (transpose copy)
+    define (rule=R_vec_sz_256) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        if (vsize && (vsize % 256 != 0))
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 256.");
+        };
+    }
+
+    define (rule=R_src_oram_aligned) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_OPRAM) || (addr & SLICE_MASK)) {
+          error(0, "illegal operand src_add: " + get_mem_name(addr) +
+                   ", expected aligned Operand RAM address (e.g. OR_x_y_0).");
+        }
+      };
+    }
+
+    // DEST_ADD must be an 16-bit aligned OPRAM address
+    define (rule=R_dest_oram_aligned) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_OPRAM) || (addr & SLICE_MASK)) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", expected aligned Operand RAM address (e.g. OR_x_y_0).");
+        }
+      };
+    }
+
+    // DEST_ADD must be a valid RAM address that is 16-bit aligned
+    define (rule=R_dest_ram_aligned) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_OPRAM && atype != MEM_TRAM) || (addr & SLICE_MASK)) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", expected aligned address in Operand RAM or Twiddle RAM (e.g. OR_x_y_0, TR_x_y_0).");
+        }
+      };
+    }
+
+    // DEST_ADD must be a valid unaligned RAM address (used by copy.shift)
+    define (rule=R_dest_ram_unaligned) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_OPRAM && atype != MEM_TRAM) || (0 == (addr & SLICE_MASK))) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", expected unaligned address in Operand RAM or Twiddle RAM (e.g. OR_x_y_z, TR_x_y_z, z = 1..15).");
+        }
+      };
+    }
+
+    // SRC_ADD must be a valid RAM address that is 16-bit aligned
+    define (rule=R_src_ram_aligned) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_OPRAM && atype != MEM_TRAM) || (addr & SLICE_MASK)) {
+          error(0, "illegal operand src_add: " + get_mem_name(addr) +
+                   ", expected aligned address in Operand RAM or Twiddle RAM (e.g. OR_x_y_0, TR_x_y_0).");
+        }
+      };
+    }
+
+    // SRC_ADD must be an OPRAM or a TRAM address
+    define (rule=R_src_ram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_OPRAM && atype != MEM_TRAM) {
+          error(0, "illegal operand src_add: " + get_mem_name(addr) + 
+                   ", expected Operand or Twiddle RAM address (e.g. OR_x_y_z, TR_x_y_z).");
+        }
+      };
+    }
+
+    // SRC_ADD must be a valid memory address or a register
+    define (rule=R_src_valid_loc) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src_add;
+        unsigned atype = decode_mem(addr);
+          if (atype >= MEM_RESERVED) {
+            error(0, "illegal operand src_add: " + get_mem_name(addr) +
+                     ", expected a valid address or a register.");
+          }
+      };
+    }
+
+    // SRC_ADD must be a work register or an SPR
+    define (rule=R_src_valid_reg) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype >= MEM_RESERVED) || (atype == MEM_TRAM) || (atype == MEM_OPRAM)) {
+          error(0, "illegal operand src_add: " + get_mem_name(addr) +
+                   ", expected a valid work register or an SPR.");
+        }
+      };
+    }
+
+    // DEST_ADD must be a valid memory address, a work register or a writable SPR
+    define (rule=R_dest_valid_loc) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if (atype >= MEM_RESERVED) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", expected a valid address or a register.");
+        } else if (atype == MEM_HW_SPR) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", a read-only SPR is a not a valid destination register.");
+        }
+     };
+    }
+
+    // DEST_ADD must be a work register or a writable SPR
+    define (rule=R_dest_valid_reg) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype >= MEM_RESERVED) || (atype == MEM_TRAM) || (atype == MEM_OPRAM)) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", expected a valid work register or a writable SPR.");
+        } else if (atype == MEM_HW_SPR) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", a read-only SPR is a not a valid destination register.");
+        }
+      };
+    }
+
+    // SRC2_ADD must be a work register or an SPR
+    define (rule=R_src2_valid_reg) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src2_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype >= MEM_RESERVED) || (atype == MEM_TRAM) || (atype == MEM_OPRAM)) {
+          error(0, "illegal operand src2_add: " + get_mem_name(addr) +
+                   ", expected a valid work register or an SPR.");
+        }
+      };
+    }
+
+    // SRC_ADD for IMA = 1 must be a work register
+    define (rule=R_src_ind) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_WR) {
+          error(0, "illegal operand src_add for indirect memory access: " + get_mem_name(addr) +
+                   ", expected a work register (e.g. WR_x).");
+        }
+      };
+    }
+
+    // SGI_ADD must be an aligned TRAM address
+    define (rule=R_sgi_tram_aligned) {
+      action = func(InstrInfo ii) {
+        unsigned addr = sgi_add;
+        unsigned atype = decode_mem(sgi_add);
+        if ((atype != MEM_TRAM) || (addr & SLICE_MASK)) {
+          error(0, "illegal operand sgi_add: " + get_mem_name(addr) +
+                   ", expected an aligned Twiddle RAM address (e.g. TR_x_y_0).");
+        }
+      };
+    }
+
+    // COPY THLD_ADD must be a work register, an OPRAM or TRAM address
+    define (rule=R_thld_wr_ram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = thld_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_WR && atype != MEM_OPRAM && atype != MEM_TRAM) {
+          error(0, "illegal operand thld_add: " + get_mem_name(addr) +
+                   ", expected a work register, an Operand RAM or a Twiddle RAM address (e.g. WR_x, OR_x_y_z, TR_x_y_z).");
+        }
+      };
+    }
+
+    // MAXS THLD_ADD must be a work register or an OPRAM address, MAXS has no access to TRAM
+    define (rule=R_thld_wr_opram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = thld_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_WR && atype != MEM_OPRAM) {
+          error(0, "illegal operand thld_add: " + get_mem_name(addr) + 
+                   ", expected a work register or an Operand RAM address (e.g. WR_x, OR_x_y_z).");
+        }
+      };
+    }
+
+    // GM_ADD must be a work register or an OPRAM address
+    define (rule=R_gm_wr_opram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = gm_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_OPRAM && atype != MEM_WR) {
+          error(0, "illegal operand gm_add: " + get_mem_name(addr) +
+                   ", expected a work register or an Operand RAM address (e.g. WR_x, OR_x_y_z).");
+        }
+      };
+    }
+
+    // MULT_COEF_ADD in the WIN instruction must be a work register or a TRAM address
+    define (rule=R_win_mult_coef_wr_tram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = mult_coef_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_TRAM && atype != MEM_WR) {
+          error(0, "illegal operand mult_coef_add: " + get_mem_name(addr) +
+                   ", expected a work register or a Twiddle RAM address (e.g. WR_x, TR_x_y_z).");
+        }
+      };
+    }
+
+    // MULT_COEF_ADD must be either a work register (for windowing operations) or a TRAM address
+    define (rule=R_mult_coef_wr_tram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = mult_coef_add;
+        unsigned atype = decode_mem(addr);
+        unsigned wtype = win_type_rdx;
+        if (wtype == 0 && atype != MEM_TRAM) {
+          error(0, "illegal operand mult_coef_add: " + get_mem_name(addr) +
+                   ", expected a Twiddle RAM address (e.g. TR_x_y_z) for non-windowing operation.");
+        } else if (atype != MEM_TRAM && atype != MEM_WR) {
+          error(0, "illegal operand mult_coef_add: " + get_mem_name(addr) +
+                   ", expected a work register or a Twiddle RAM address (e.g. WR_x, TR_x_y_z).");
+        }
+      };
+    }
+
+    // MULT_COEF_ADD must be TRAM address
+    define (rule=R_mult_coef_tram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = mult_coef_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_TRAM) {
+          error(0, "illegal operand mult_coef_add: " + get_mem_name(addr) +
+                   ", expected a Twiddle RAM address (e.g. TR_x_y_z).");
+        }
+      };
+    }
+
+    // TAP_COEF_ADD must be TRAM address
+    define (rule=R_tap_coef_tram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = tap_coef_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_TRAM) {
+          error(0, "illegal operand tap_coef_add: " + get_mem_name(addr) +
+                   ", expected a Twiddle RAM address (e.g. TR_x_y_z).");
+        }
+      };
+    }
+
+    // SCP_COEF_ADD must be TRAM address
+    define (rule=R_scp_coef_tram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = scp_coef_add;
+        unsigned atype = decode_mem(addr);
+        if (atype != MEM_TRAM) {
+          error(0, "illegal operand scp_coef_add: " + get_mem_name(addr) +
+                   ", expected a Twiddle RAM address (e.g. TR_x_y_z).");
+        }
+      };
+    }
+
+    // Windowing is only legal in the very first round of (I)RDX4
+    define (rule=R_rdx_rnd0_win) {
+      action = func(InstrInfo ii) {
+        unsigned rnd = fft_rnd;
+        unsigned wtype = win_type_rdx;
+        if (rnd > 0 && wtype > 0) {
+          error(0, "windowing operation is legal only in the very first round (.round0)");
+        }
+      };
+    }
+
+    // Validate operands for PDMA Instruction.
+    define (rule=R_valid_pdma_operands) {
+      action = func(InstrInfo ii) {
+
+        unsigned addr;
+
+        if (ii.instrName() == "pdma_ind") { // pdma.ind version
+          addr = opram_mem_start_addr;
+          if (decode_mem(addr) != 0) {
+            error(0, "illegal operand opram_mem_start_addr: " + get_mem_name(addr) +
+                     ", expected a valid work register for PDMA indirect version (e.g. WR_x).");
+          }
+        } else {
+          addr = opram_mem_start_addr;
+          if (get_mode(addr) < 2) {
+            error(0, "illegal operand opram_mem_start_addr: " + get_mem_name(addr) +
+                     ", expected an aligned Operand RAM address (e.g. OR_x_y_0).");
+          } else if (addr % 16 != 0) {
+            error(0, "illegal operand opram_mem_start_addr : 0x" , hex, addr,
+                     ", OPRAM memory start address must be aligned (multiple of 16) in PDMA transfers (e.g. OR_x_y_0). ");
+          }
+        }
+
+        addr = opram_continuous_addr;
+        if (addr == 0) {
+          error(0, " illegal operand opram_continuous_addr : 0x" , hex, addr,
+                   ", OPRAM continuous start address must be non-zero for PDMA transfer.");
+        }
+
+        unsigned dpack = data_packing;
+        if (((addr & (addr - 1)) != 0)
+            && (dpack == 18 /* .CP4Q_FMTB */
+                || dpack == 20 /* .CP8D_FMTB */
+                || dpack == 23 /* .CP16_FMTB */
+                || dpack == 26 /* .CP32_FMTB */)) {
+          error(0, "illegal operand sysram_continuous_addr : 0x" , hex, addr,
+                   ", SRAM continuous start address must of a power of 2 for the given data packing mode.");
+        }
+
+        // OPRAM Continuous Address should be in multiple of 2 for 16-bit Mix Mode.
+        addr = opram_continuous_addr;
+        if ((dpack == 6) && (addr % 2 != 0 )) {
+          error(0, "illegal operand opram_continuous_addr : 0x", hex , addr,
+                   ", opram_continuous_addr should be a multiple of 2 for 16-bit Transpose Mode for PDMA transfer.");
+        }
+
+        unsigned vlen = vector_len;
+        if (trans_type == 0) { // .sysram2opram
+          switch (dpack) {
+            case  1 : // .24cmplx
+            case  4 : // .48bin
+            case  7 : // .24swap
+            case 26 : // .CP32_FMTB
+              if (vlen % 8 != 0) {
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 8 for the given data packing mode.");
+              }
+              break;
+
+            case  6 : // .16bit_transpose
+              if (vlen % 16 != 0) {
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 16 for the given data packing mode.");
+              }
+              break;
+
+            case  3 : // .16real
+            case 16 : // .CP4Q
+            case 18 : // .CP4Q_FMTB
+            case 20 : // .CP8D_FMTB
+            case 21 : // .CP8D_FMTC
+            case 22 : // .CP16_FMTA
+              if (vlen % 2 != 0) {
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 2 for the given data packing mode.");
+              }
+              break;
+
+            case  0 : // .16cmplx
+            case  2 : // .24real
+            case  5 : // .16swap
+            case 23 : // .CP16_FMTB
+            case 24 : // .CP16_FMTC
+              if (vlen % 4 != 0) {
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 4 for the given data packing mode.");
+              }
+              break;
+
+            case 25 : // .CP16_FMTD
+              if (vlen % 3 != 0) {
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 3 for the given data packing mode.");
+              }
+              break;
+
+            default : break;
+          }
+        }
+
+        if (trans_type == 1) { // .opram2sysram
+          switch (dpack) {
+            case 6 : // .16bit_transpose
+              if (vlen % 32 != 0) {
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 32 slices for the given data packing mode.");
+              }
+              break;
+            case 22 : // .CP16_FMTA
+            case 23 : // .CP16_FMTB
+            case 24 : // .CP16_FMTC
+            case 25 : // .CP16_FMTD
+              if (vlen % 16 != 0) {
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 16 slices for the given data packing mode.");
+              }
+              break;
+
+            default :
+              if (vlen % 16 != 0) {
+                // multiple of 16 slices for any OPRAM-SRAM transfer
+                error(0, "illegal operand vector_len : ", vlen,
+                         ", vector length should be a multiple of 16 for OPRAM-to-SRAM transfer.");
+              }
+              break;
+          }
+        }
+
+        // Signal vector length overflow
+        if (vlen > 0x8000) {
+          if (trans_type == 1) { // .opram2sysram
+            // Vector length should be less than or equal to 32k compressed/packed operands for OPRAM-to-SRAM transfer
+            error(0, "illegal operand vector_len : ", vlen,
+                     ", vector length should not exceed 32k compressed/packed operands for OPRAM-to-SRAM transfer.");
+          } else { // .sysram2opram
+            // Vector length should be less than or equal to 32k decompressed/unpacked operands for SRAM-to-OPRAM transfer
+            error(0, "illegal operand vector_len : ", vlen,
+                     ", vector length should not exceed 32k decompressed/unpacked operands for SRAM-to-OPRAM transfer.");
+          }
+        }
+      };
+    }
+
+    // Validate operands for PDMA flex mode instruction SYSRAM to OPRAM.
+    define (rule=R_valid_pdma_flex_operands) {
+      action = func(InstrInfo ii) {
+
+        unsigned addr = opram_mem_start_addr;
+        if (ii.instrName() == "pdma_flex_ind") { // pdma.ind version
+          if (decode_mem(addr) != 0) {
+            error(0, "illegal operand opram_mem_start_addr: " + get_mem_name(addr) +
+                     ", expected a work register for the indirect version (e.g. WR_x).");
+          }
+        } else {
+          if (get_mode(addr) < 2) {
+            error(0, "illegal operand opram_mem_start_addr: " + get_mem_name(addr) +
+                     ", expected an aligned Operand RAM address (e.g. OR_x_y_0).");
+          } else if (addr % 16 != 0) {
+            error(0, "illegal operand opram_mem_start_addr : 0x" , hex, addr ,
+                     " , OPRAM memory start address must be aligned (multiple of 16) for PDMA transfer.");
+          }
+        }
+
+        addr = opram_continuous_addr;
+        if (addr == 0) {
+          error(0, "illegal operand opram_continuous_addr : 0x" , hex, addr ,
+                   " , OPRAM continuous start address must be non-zero for PDMA transfer.");
+        }
+
+        unsigned vlen = vector_len;
+        if (vlen > 0x8000) {
+          error(0, "illegal operand vector_len : ", vlen,
+                   ", vector length should not exceed 0x8000 (32k operands in OPRAM) for PDMA transfer in flex mode.");
+        }
+        if (vlen % 16 != 0) {
+           error(0, "illegal operand vector_len : ", vlen, ", expected multiple of 16.");
+        }
+        if ((same_cmp_cnt == 1) && (vlen % 16 != 0)) {
+          error(0, "illegal operand vector_len : ", vlen, ", expected multiple of 16 for 4 compressed words.");
+        }
+        if ((same_cmp_cnt == 2) && (vlen % 24 != 0)) {
+          error(0, "illegal operand vector_len : ", vlen, ", expected multiple of 24 for 6 compressed words.");
+        }
+        if ((same_cmp_cnt == 3) && (vlen % 64 != 0)) {
+          error(0, "illegal operand vector_len : ", vlen, ", expected multiple of 64 for the selected continuous compression count.");
+        }
+
+        if (trans_type == 1) {
+          addr = tram_start_addr;
+          unsigned tmode = get_mode(addr);
+          if (tmode != MEM_TRAM) {
+            error(0, "illegal operand tram_start_addr: " + get_mem_name(addr) +
+                   ", expected a Twiddle RAM address (e.g. TR_x_y_z).");
+          }
+         }
+      };
+    }
+
+    // Validate CMP operands
+    define (rule=R_valid_cmp_operands) {
+      action = func(InstrInfo ii) {
+        unsigned addr = src_add;
+        unsigned atype = decode_mem(addr);
+        if (atype == MEM_RESERVED) {
+          error(0, "illegal operand src1_add: " + get_mem_name(addr) +
+                   ", expected any of: WR_x, SPR_x, HW_SPR_x, EVT_SPR_x, CHRP_SPR_x, OR_x_y_0, TR_x_y_0.");
+        }
+        addr = dest_add;
+        atype = decode_mem(addr);
+        if (atype == MEM_RESERVED
+            || atype == MEM_HW_SPR) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", expected any of: WR_x, SPR_x, EVT_SPR_x, CHRP_SPR_x, OR_x_y_0, TR_x_y_0.");
+        }
+        if (ii.instrName() == "cmp") {
+          addr = src2_add;
+          atype = decode_mem(addr);
+          if (atype == MEM_RESERVED
+              || atype == MEM_OPRAM
+              || atype == MEM_TRAM) {
+            error(0, "illegal operand src2_add: " + get_mem_name(addr) +
+                     ", expected any of: WR_x, SPR_x, HW_SPR_x, EVT_SPR_x, CHRP_SPR_x.");
+          }
+        }
+      };
+    }
+
+    // Validate CMP bitmask operands
+    define (rule=R_valid_cmp_slice_operands) {
+      action = func(InstrInfo ii) {
+        unsigned count = mask_bitcnt;
+        unsigned lsb1 = mask_src1_lsb;
+        unsigned lsb2 = mask_src2_lsb;
+        if ((count < 1) || (count > 23))
+          error(0, "illegal operand bitcnt: ", count, ", expected 1 <= bitcnt <= 23");
+        if (lsb1 > 22)
+          error(0, "illegal operand src1_lsb, expected 0 <= src1_lsb <= 22");
+        if (lsb2 > 22)
+          error(0, "illegal operand src2_lsb, expected 0 <= src2_lsb <= 22");
+        if (lsb1 + count > 23) {
+          error(0, "illegal src1 slice out of bounds: [", (lsb1 + count - 1), ":", lsb1,
+                   "], expected a slice in the range [22:0]");
+        }
+        if (lsb2 + count > 23) {
+            error(0, "illegal src2 slice out of bounds: [", (lsb2 + count - 1), ":", lsb2,
+                   "], expected a slice in the range [22:0]");
+        }
+      };
+    }
+
+    // Validate SET bitmask operands
+    define (rule=R_valid_set_slice_operands) {
+      action = func(InstrInfo ii) {
+        unsigned count = mask_bitcnt;
+        unsigned lsb1 = mask_src_lsb;
+        unsigned lsb2 = mask_dest_lsb;
+        if ((count < 1) || (count > 48))
+          error(0, "illegal operand bitcnt: ", count, ", expected 1 <= bitcnt <= 48");
+        if (lsb1 > 47)
+          error(0, "illegal operand src_lsb, expected 0 <= src_lsb <= 47");
+        if (lsb2 > 47)
+          error(0, "illegal operand dest_lsb, expected 0 <= dest_lsb <= 47");
+        if (lsb1 + count > 48) {
+          error(0, "illegal src slice out of bounds: [", (lsb1 + count - 1), ":", lsb1,
+                   "], expected a slice in the range [47:0]");
+        }
+        if (lsb2 + count > 48) {
+          error(0, "illegal dest slice out of bounds: [", (lsb2 + count - 1), ":", lsb2,
+                   "], expected a slice in the range [47:0]");
+        }
+      };
+    }
+
+
+    // Validate SEL operands
+    define (rule=R_valid_sel_operands) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if (atype == MEM_RESERVED
+            || atype == MEM_HW_SPR) {
+          error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                   ", expected any of: WR_x, SPR_x, EVT_SPR_x, CHRP_SPR_x, OR_x_y_0, TR_x_y_0.");
+        }
+        addr = sel_src1_add;
+        atype = decode_mem(addr);
+        if (atype == MEM_RESERVED) {
+          error(0, "illegal operand src1_add: " + get_mem_name(addr) +
+                   ", expected a valid register or memory address.");
+        }
+        addr = src2_add;
+        atype = decode_mem(addr);
+        if (atype == MEM_RESERVED) {
+          error(0, "illegal operand src2_add: " + get_mem_name(addr) +
+                   ", expected a valid register or memory address.");
+        }
+        addr = sel_src3_add;
+        atype = decode_mem(addr);
+        if (atype == MEM_RESERVED) {
+          error(0, "illegal operand src3_add: " + get_mem_name(addr) +
+                   ", expected a valid register or memory address.");
+        }
+      };
+    }
+
+    // FFT VEC_SZ must be exactly 16 when 2x mode is enabled.
+    define (rule=R_fft_2x_vec_sz_16) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        unsigned is_2x = mode2x;
+        if (is_2x && vec_sz != 16) {
+          error(0, "illegal operand vec_sz : ", vsize, ", vector length must be 16 when 2x mode is enabled.");
+        }
+      };
+    }
+
+    // FFT VEC_SZ must be a power of two, greater than or equal to 8.
+    define (rule=R_fft_vec_sz) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        unsigned is_2x = mode2x;
+        if (is_2x) {
+          // MODE2X enabled
+          if (vec_sz != 16) {
+            error(0, "illegal operand vec_sz : ", vsize, ", vector length must be 16 when 2x mode is enabled.");
+          }
+        } else {
+          // MODE2X disabled
+          if (vsize && (vsize < 8)) {
+            error(0, "illegal operand vec_sz : ", vsize, ", vector length must be greater than or equal to 8.");
+          }
+          if (vsize & (vsize - 1) != 0) {
+            error(0, "illegal operand vec_sz : ", vsize, ", vector length must be a power of 2.");
+          }
+        }
+      };
+    }
+
+    // hist VEC_SZ must be a multiple of 8
+    define (rule=R_hist_vec_sz) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        // the vector size is ignored in store only mode.
+        if ((hist_mode != 3) && ((vsize == 0) || (vsize % 8 != 0))) {
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 8.");
+        }
+      };
+    }
+
+    // sort VEC_SZ must be a multiple of SET_SIZE
+    define (rule=R_sort_vec_sz) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        unsigned ssize = set_size;
+        if ((ssize == 0) && (vsize % 4 != 0)) {
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 4 (multiple of set size).");
+        } else if ((ssize == 1) && (vsize % 8 != 0)) {
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 8 (multiple of set size).");
+        } else if ((ssize == 2) && (vsize % 16 != 0)) {
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 16 (multiple of set size).");
+        }
+      };
+    }
+
+    // maxs VEC_SZ must be a multiple of 8 or 16 depending on input packing.
+    define (rule=R_maxs_vec_sz) {
+      action = func(InstrInfo ii) {
+        unsigned vsize = vec_sz;
+        if ((in_pack == 2) && (vsize % 16 != 0)) {
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 16 when input is packed.");
+        } else if (vsize % 8 != 0) {
+          error(0, "illegal operand vec_sz : ", vsize, ", expected multiple of 8.");
+        }
+      };
+    }
+
+    // MAXS THLD_ADD must be a slice aligned OPRAM address in threshold vector mode.
+    define (rule=R_thld_aligned_opram) {
+      action = func(InstrInfo ii) {
+        unsigned addr = thld_add;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_OPRAM) || (addr & 0xF != 0)) {
+          error(0, "illegal operand thld_add: " + get_mem_name(addr) +
+                   ", expected an aligned Operand RAM address (e.g. OR_x_y_0).");
+        }
+      };
+    }
+
+    // VEC_SZ should be an even value when data packing is enabled.
+    define (rule=R_vec_sz_vmt) {
+      action = func(InstrInfo ii) {
+        if ((in_dattyp_vmt == 0) && (ip_pack == 2) && (vec_sz % 2 != 0)) {
+          // When input data types is real and when input data is packed, vec_sz should be even.
+          error(0, "illegal operand vec_sz: " , vec_sz, ", expected an even size when input is packed.");
+        }
+      };
+    }
+
+    // Verify DEST_ADD for VMT operations except cordic angle
+    define (rule=R_dest_vmt) {
+      action = func(InstrInfo ii) {
+        unsigned addr = dest_add;
+        unsigned atype = decode_mem(addr);
+        if (opsq2s3 == 1) { // vector sum and scale
+          // dest_add must be OPRAM or a work register
+          if ((atype != MEM_WR) && ((atype != MEM_OPRAM) || (addr & SLICE_MASK))) {
+            error(0, "illegal operand dest_add for vector sum and scale: " + get_mem_name(addr) +
+                     ", expected a work register or an aligned Operand RAM address (e.g. WR_x, OR_x_y_0).");
+          }
+        } else { // stage 3 is disabled, no vector sum and scale
+          // normalize and dual vector sum require the result to be written in OPRAM
+          if ((ii.instrName() == "vmt_norm_sq2s2") || (ii.instrName() == "vmt_vec_sq2s2")) {
+            if ((atype != MEM_OPRAM) || (addr & SLICE_MASK)) {
+              error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                       ", expected an aligned Operand RAM address (e.g. OR_x_y_0).");
+            }
+          } else {
+            // dest_add must an aligned OPRAM or TRAM address
+            if ((atype != MEM_OPRAM && atype != MEM_TRAM) || (addr & SLICE_MASK)) {
+              error(0, "illegal operand dest_add: " + get_mem_name(addr) +
+                       ", expected an aligned address in Operand RAM or Twiddle RAM (e.g. OR_x_y_0, TR_x_y_0).");
+            }
+          }
+        }
+      };
+    }
+
+    define (rule=R_sq2s3_vmt) {
+      action = func(InstrInfo ii) {
+        if (opsq2s3 == 1) {
+          error(0, "missing operand mult_s_exp_n_val_addr: .sum_sq2s3 is enabled by the instruction.");
+        }
+      };
+    }
+
+    define (rule=R_no_sq2s2_vmt) {
+      action = func(InstrInfo ii) {
+        if ((opsq2s1 == 0) && (opsq2s3 == 0)) {
+          error(0, "illegal vmt sequence 2 instruction: all stages are disabled, expected at least one stage to be enabled.");
+        }
+      };
+    }
+
+    define (rule=R_shift_vec_vmt) {
+      action = func(InstrInfo ii) {
+        unsigned addr = imdt_offset_val_re;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_TRAM) || (addr & SLICE_MASK)) {
+            error(0, "illegal operand shift_vec: " + get_mem_name(addr) +
+                     ", expected an aligned Twiddle RAM address (e.g. TR_x_y_0).");
+        }
+      };
+    }
+
+    define (rule=R_vec2_add_vmt) {
+      action = func(InstrInfo ii) {
+        unsigned addr = imdt_offset_val_re;
+        unsigned atype = decode_mem(addr);
+        if ((atype != MEM_OPRAM && atype != MEM_TRAM) || (addr & SLICE_MASK)) {
+            error(0, "illegal operand vec2_add: " + get_mem_name(addr) +
+                     ", expected an aligned address in Operand RAM or Twiddle RAM (e.g. OR_x_y_0, TR_x_y_0).");
+        }
+      };
+    }
+
+   define (rule=R_offset_wr_vmt) {
+     action = func(InstrInfo ii) {
+       unsigned addr = imdt_offset_val_re;
+       unsigned atype = decode_mem(addr);
+       if (atype != MEM_WR) {
+         error(0, "illegal operand offset_wr: " + get_mem_name(addr) +
+                  ", expected a work register (e.g. WR_x).");
+       }
+     };
+   }
+
+   define (rule=R_shift_val_vmt) {
+     action = func(InstrInfo ii) {
+       unsigned addr = imdt_offset_val_re;
+       unsigned atype = decode_mem(addr);
+       if (atype != MEM_WR) {
+         error(0, "illegal operand shift_val: " + get_mem_name(addr) +
+                  ", expected a work register (e.g. WR_x).");
+       }
+     };
+   }
+
+   define (rule=R_mult_s_addr_vmt) {
+     action = func(InstrInfo ii) {
+       unsigned addr = mult_s_exp_n_val_addr;
+       unsigned atype = decode_mem(addr);
+       if (atype != MEM_WR) {
+         error(0, "illegal operand mult_s_exp_n_val_addr: " + get_mem_name(addr) +
+                  ", expected a work register (e.g. WR_x).");
+       }
+     };
+   }
+
+ }; // end of assembler block for asm_rules
+
+// Identity macro to help with field value transfer in instruction alias definitions
+#define ID(X) X(X)
+
+ } // EOF
