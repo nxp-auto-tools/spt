@@ -64,7 +64,9 @@ copy /Y %SPT_SRC%\inc\*.inc %SPT_BIN%\inc
 copy /Y %SPT_SRC%\doc\as-spt%SPT_VER%-manual.pdf %SPT_BIN%\doc
 copy /Y %SPT_SRC%\doc\spt%SPT_VER%-mnemonics-quickref.txt %SPT_BIN%\doc
 copy /Y %SPT_SRC%\doc\gas-manual.pdf %SPT_BIN%\doc
-copy /Y %SPT_SRC%\doc\readme.pdf %SPT_BIN%\readme.pdf
+copy /Y %SPT_SRC%\doc\LA_OPT_NXP_Software_License.txt %SPT_BIN%\doc
+copy /Y %SPT_SRC%\doc\COPYING.txt %SPT_BIN%\doc
+copy /Y %SPT_SRC%\doc\S32Compiler_SPT3.8_Assembler_Release_Notes.pdf %SPT_BIN%\S32Compiler_SPT3.8_Assembler_Release_Notes.pdf
 
 zip -9 -r "%WIN_ZIP%" %SPT_BIN% || goto :error
 

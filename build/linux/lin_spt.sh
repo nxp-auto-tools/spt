@@ -37,7 +37,9 @@ cp -r inc/*.inc $SPT_BIN/inc
 cp doc/as-spt${SPT_VER}-manual.pdf $SPT_BIN/doc
 cp doc/spt${SPT_VER}-mnemonics-quickref.txt $SPT_BIN/doc
 cp doc/gas-manual.pdf $SPT_BIN/doc
-cp doc/readme.pdf $SPT_BIN/readme.pdf
+cp doc/LA_OPT_NXP_Software_License.txt $SPT_BIN/doc
+cp doc/COPYING.txt $SPT_BIN/doc
+cp doc/S32Compiler_SPT3.8_Assembler_Release_Notes.pdf $SPT_BIN/S32Compiler_SPT3.8_Assembler_Release_Notes.pdf
 
 #prepare artifact
 BUILD_DATE=`date +%y%m%d`
